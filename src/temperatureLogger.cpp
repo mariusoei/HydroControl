@@ -12,7 +12,7 @@
 
 // DS18B20 data wire is plugged into port D2 on the ESP
 #define ONE_WIRE_BUS_TEMPSENSOR D2
-// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperatureC ICs)
 OneWire oneWire(ONE_WIRE_BUS_TEMPSENSOR);
 
 // Pass our oneWire reference to Dallas Temperature. 
@@ -24,19 +24,16 @@ const int mqtt_port = 1883;
 const char* mqtt_user = "sensors";
 const char* mqtt_password = "mariusmqttsensors12";
 
-const char* mqtt_sensorTopic = "home-assistant/sensor/temperature/sensor1";
-const String clientId = "TempSensor1";
-
-const int interval_publish = 15; //publish every 15s
-uint32_t last_millis_publish=0;
+const char* mqtt_sensorTopic = "home-assistant/sensor/temperatureC/sensor1";
+const String clientId = "HydroControl";
 
 
 
-const float temp_max_C = 50; // maximum realistic temperature
-const float temp_min_C = -10; // and minimum (reject measurement if outside range)
+const float TEMP_MAX_C = 50; // maximum realistic temperatureC
+const float TEMP_MIN_C = -10; // and minimum (reject measurement if outside range)
 
 WiFiClient espClient;
-PubSubClient client(espClient);
+PubSubClient mqttClient(espClient);
 long lastMsg = 0;
 char msg[50];
 
@@ -50,57 +47,59 @@ char msg[50];
 // D5 -> SCL
 SSD1306Wire  display(0x3c, D3, D5);
 
-// Variable for the sensor value
-float temperature;
+// Variable for the sensor value (in deg C)
+float temperatureC;
+// And for the value printed to a character array
+char temperature_cstr [10];
+// Boolean for plausibility (only published if plausible)
+bool temperaturePlausible;
 
+// Measured calibration values for this specific sensor
 const float TEMP_RAWHIGH = 99.2; // measured in boiling water
 const float TEMP_RAWLOW = 1.0; // measured in ice bath
 const float TEMP_REFHIGH = 99.2; // boiling water in Stuttgart
 const float TEMP_REFLOW = 0; // ice bath reference
+const float TEMP_RAW_RANGE = TEMP_RAWHIGH - TEMP_RAWLOW;
+const float TEMP_REF_RANGE = TEMP_REFHIGH - TEMP_REFLOW;
 
 
 
-
-bool reconnectOnce() {
+bool MQTT_reconnectOnce() {
   // Loop until we're reconnected
   Serial.print("Attempting MQTT connection...");
   // Attempt to connect
-  if (client.connect(clientId.c_str(),mqtt_user,mqtt_password)) {
+  if (mqttClient.connect(clientId.c_str(),mqtt_user,mqtt_password)) {
     Serial.println("connected");
     return true;
   } else {
     Serial.print("failed, rc=");
-    Serial.print(client.state());
+    Serial.print(mqttClient.state());
     return false;
   }
 }
 
-void reconnect() {
+void MQTT_reconnect() {
   // Loop until we're reconnected
-  while (!client.connected()) {
-    if(reconnectOnce()) return;
+  while (!mqttClient.connected()) {
+    if(MQTT_reconnectOnce()) return;
     Serial.println(" try again in 5 seconds");
     // Wait 5 seconds before retrying
     delay(5000);
   }
 }
 
-float correctTemperatureSensorValue(float temperature_raw){
+float applySensorCalibration(float temperature_raw){
   // Use the measured values from ice bath and boiling water for sensor calibration
-  // Obviously only valid for one specific sensor
-  float RawRange = TEMP_RAWHIGH - TEMP_RAWLOW;
-  float ReferenceRange = TEMP_REFHIGH - TEMP_REFLOW;
-  float CorrectedValue = (((temperature_raw - TEMP_RAWLOW) * ReferenceRange) / RawRange) + TEMP_REFLOW;
-
+  float CorrectedValue = (((temperature_raw - TEMP_RAWLOW) * TEMP_REF_RANGE) / TEMP_RAW_RANGE) + TEMP_REFLOW;
   return CorrectedValue;
 }
 
-bool checkMeasurementPlausibility(float temperature_C){
+bool checkTempMeasurementPlausibility(float temperature_C){
   // Check the measured value for plausibility
   bool plausible = true;
 
-  if(temperature_C>temp_max_C) plausible = false;
-  if(temperature_C<temp_min_C) plausible = false;
+  if(temperature_C>TEMP_MAX_C) plausible = false;
+  if(temperature_C<TEMP_MIN_C) plausible = false;
 
   return plausible;
 }
@@ -120,47 +119,43 @@ void setupTemperatureLogger() {
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);
 
-  // Setup wifi and mqtt
-  setup_wifi();
-  client.setServer(mqtt_server, mqtt_port);
+  // Setup mqtt
+  mqttClient.setServer(mqtt_server, mqtt_port);
 
 }
 
-
-void loopTemperatureLogger() {
-
-  // Read the temperature sensor value
+void measureWaterTemperature(){
+  // Read the temperatureC sensor value
   sensors.requestTemperatures(); // Send the command to get temperatures
-  temperature = sensors.getTempCByIndex(0);
-  temperature = correctTemperatureSensorValue(temperature);
-  // Write temperature to character array
-  char temperature_cstr [10];
-  sprintf(temperature_cstr,"%.2f",temperature);
+  temperatureC = sensors.getTempCByIndex(0);
+  temperatureC = applySensorCalibration(temperatureC);
+  // Write temperatureC to character array
+  sprintf(temperature_cstr,"%.2f",temperatureC);
 
   // Check plausibility
-  bool plausible = checkMeasurementPlausibility(temperature);
+  temperaturePlausible = checkTempMeasurementPlausibility(temperatureC);
+}
 
+void updateOledDisplay(){
   // clear the display
   display.clear();
    
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_24);
-  display.drawString(0,0, String(temperature));
+  display.drawString(0,0, String(temperatureC));
   // write the buffer to the display
   display.display();
+}
 
-  if (!client.connected()) {
+
+void publishWaterTemperature() {
+  if (!mqttClient.connected()) {
         // Only try once so the display update isn't blocked
-        reconnectOnce();
+        MQTT_reconnectOnce();
   }
-  if (client.connected()){
-    client.loop();
-    // don't update mqtt publication every second
-    if(millis()>=last_millis_publish+1000*interval_publish){
-      last_millis_publish = millis();
-      // publish sensor value as MQTT message
-      if (plausible) client.publish(mqtt_sensorTopic, temperature_cstr);
-    }
+  if (mqttClient.connected()&&temperaturePlausible){
+    mqttClient.loop();
+    // publish sensor value as MQTT message
+    mqttClient.publish(mqtt_sensorTopic, temperature_cstr);
   }
-  delay(200);
 }
