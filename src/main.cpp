@@ -1,64 +1,60 @@
-#include <Arduino.h>
+// #define _TASK_TIMECRITICAL      // Enable monitoring scheduling overruns
+// #define _TASK_SLEEP_ON_IDLE_RUN // Enable 1 ms SLEEP_IDLE powerdowns between tasks if no callback methods were invoked during the pass
+// #define _TASK_STATUS_REQUEST    // Compile with support for StatusRequest functionality - triggering tasks on status change events in addition to time only
+// #define _TASK_WDT_IDS           // Compile with support for wdt control points and task ids
+// #define _TASK_LTS_POINTER       // Compile with support for local task storage pointer
+// #define _TASK_PRIORITY          // Support for layered scheduling priority
+// #define _TASK_MICRO_RES         // Support for microsecond resolution
+// #define _TASK_STD_FUNCTION      // Support for std::function (ESP8266 and ESP32 ONLY)
+// #define _TASK_DEBUG             // Make all methods and variables public for debug purposes
+// #define _TASK_INLINE            // Make all methods "inline" - needed to support some multi-tab, multi-file implementations
+// #define _TASK_TIMEOUT           // Support for overall task timeout
+// #define _TASK_OO_CALLBACKS      // Support for dynamic callback method binding
+#include <TaskScheduler.h>
 
-// Includes for the DS18B20 sensor
-#include <OneWire.h>
-#include <DallasTemperature.h>
-
-// Data wire is plugged into port D2 on the ESP
-#define ONE_WIRE_BUS D2
-
-// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
-OneWire oneWire(ONE_WIRE_BUS);
-
-// Pass our oneWire reference to Dallas Temperature. 
-DallasTemperature sensors(&oneWire);
-
-
-//MQTT
+#include "temperatureLogger.h"
 #include <ESP8266WiFi.h>
-#include <PubSubClient.h>
 
+// Debug and Test options
+#define _DEBUG_
+//#define _TEST_
+
+#ifdef _DEBUG_
+#define _PP(a) Serial.print(a);
+#define _PL(a) Serial.println(a);
+#else
+#define _PP(a)
+#define _PL(a)
+#endif
+
+
+#define WIFI_CONNECTION_TIMEOUT 20
 const char* ssid = "***REMOVED***";
 const char* password = "***REMOVED***";
-const char* mqtt_server = "homeserver01.local";
-const int mqtt_port = 1883;
 
-const char* mqtt_user = "sensors";
-const char* mqtt_password = "mariusmqttsensors12";
+// Scheduler
+Scheduler ts;
 
-const char* mqtt_sensorTopic = "home-assistant/sensor/temperature/sensor1";
-const String clientId = "TempSensor1";
-const int publicationInterval = 15; //publish every 15s
-uint32_t last_millis_publish=0;
+void task1Callback();
+void task2Callback();
 
-const float temp_max_C = 50; // maximum realistic temperature
-const float temp_min_C = -10; // and minimum (reject measurement if outside range)
+/*
+  Scheduling defines:
+  TASK_MILLISECOND
+  TASK_SECOND
+  TASK_MINUTE
+  TASK_HOUR
+  TASK_IMMEDIATE
+  TASK_FOREVER
+  TASK_ONCE
+  TASK_NOTIMEOUT
+*/
 
-WiFiClient espClient;
-PubSubClient client(espClient);
-long lastMsg = 0;
-char msg[50];
+Task t1 (100 * TASK_MILLISECOND, TASK_FOREVER, &task1Callback, &ts, true);
+Task t2 (TASK_IMMEDIATE, 100, &task2Callback, &ts, true);
 
-
-
-// Wire library for I2C connection to OLED display
-#include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
-#include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
-
-// Initialize the OLED display
-// D3 -> SDA
-// D5 -> SCL
-
-// Initialize the OLED display using Wire library
-SSD1306Wire  display(0x3c, D3, D5);
-// SH1106 display(0x3c, D3, D5);
-
-
-// Variable for the sensor value
-float temperature;
 
 void setup_wifi() {
-
   delay(10);
   // We start by connecting to a WiFi network
   Serial.println();
@@ -67,7 +63,7 @@ void setup_wifi() {
 
   WiFi.begin(ssid, password);
 
-  while (WiFi.status() != WL_CONNECTED) {
+  for(int millis_waited=0; (millis_waited<1000*WIFI_CONNECTION_TIMEOUT)&&(WiFi.status() != WL_CONNECTED); millis_waited+=500){
     delay(500);
     Serial.print(".");
   }
@@ -81,110 +77,29 @@ void setup_wifi() {
 }
 
 
-bool reconnectOnce() {
-  // Loop until we're reconnected
-  Serial.print("Attempting MQTT connection...");
-  // Attempt to connect
-  if (client.connect(clientId.c_str(),mqtt_user,mqtt_password)) {
-    Serial.println("connected");
-    return true;
-  } else {
-    Serial.print("failed, rc=");
-    Serial.print(client.state());
-    return false;
-  }
-}
-
-void reconnect() {
-  // Loop until we're reconnected
-  while (!client.connected()) {
-    if(reconnectOnce()) return;
-    Serial.println(" try again in 5 seconds");
-    // Wait 5 seconds before retrying
-    delay(5000);
-  }
-}
-
-float sensorCalibration(float temperature_raw){
-  // Use the measured values from ice bath and boiling water for sensor calibration
-  // Obviously only valid for one specific sensor
-  float RawHigh = 99.2; // measured in boiling water
-  float RawLow = 1.0; // measured in ice bath
-  float ReferenceHigh = 99.2; // boiling water in Stuttgart
-  float ReferenceLow = 0; // ice bath reference
-  float RawRange = RawHigh - RawLow;
-  float ReferenceRange = ReferenceHigh - ReferenceLow;
-  float CorrectedValue = (((temperature_raw - RawLow) * ReferenceRange) / RawRange) + ReferenceLow;
-
-  return CorrectedValue;
-}
-
-boolean checkMeasurementPlausibility(float temperature_C){
-  // Check the measured value for plausibility
-  boolean plausible = true;
-
-  if(temperature_C>temp_max_C) plausible = false;
-  if(temperature_C<temp_min_C) plausible = false;
-
-  return plausible;
-}
-
 
 void setup() {
-  Serial.begin(9600);
-  Serial.println();
-  Serial.println();
+  // put your setup code here, to run once:
+#if defined(_DEBUG_) || defined(_TEST_)
+  Serial.begin(115200);
+  delay(2000);
+  _PL("Scheduler Template: setup()");
+#endif
+}
 
-  // Start up the sensor library
-  sensors.begin();
-
-  // Initialising the UI will init the display too.
-  display.init();
-
-  display.flipScreenVertically();
-  display.setFont(ArialMT_Plain_10);
-
-  // Setup wifi and mqtt
-  setup_wifi();
-  client.setServer(mqtt_server, mqtt_port);
-
+void loop() {
+  ts.execute();
 }
 
 
-void loop() {
+void task1Callback() {
+Serial.print(millis());
+_PL(": task1Callback()");
 
-  // Read the temperature sensor value
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  temperature = sensors.getTempCByIndex(0);
-  temperature = sensorCalibration(temperature);
-  // Write temperature to character array
-  char temperature_cstr [10];
-  sprintf(temperature_cstr,"%.2f",temperature);
+}
 
-  // Check plausibility
-  boolean plausible = checkMeasurementPlausibility(temperature);
+void task2Callback() {
+Serial.print(millis());
+_PL(": task2Callb()");
 
-  // clear the display
-  display.clear();
-   
-  display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.setFont(ArialMT_Plain_24);
-  display.drawString(0,0, String(temperature));
-  // write the buffer to the display
-  display.display();
-
-  if (!client.connected()) {
-        // Only try once so the display update isn't blocked
-        reconnectOnce();
-  }
-  if (client.connected()){
-    client.loop();
-    // don't update mqtt publication every second
-    if(millis()>=last_millis_publish+1000*publicationInterval){
-      last_millis_publish = millis();
-      // publish sensor value as MQTT message
-      if (plausible) client.publish(mqtt_sensorTopic, temperature_cstr);
-    }
-  }
-  delay(200);
 }
