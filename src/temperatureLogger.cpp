@@ -6,6 +6,7 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 // MQTT
+#include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
 
@@ -52,6 +53,11 @@ SSD1306Wire  display(0x3c, D3, D5);
 // Variable for the sensor value
 float temperature;
 
+const float TEMP_RAWHIGH = 99.2; // measured in boiling water
+const float TEMP_RAWLOW = 1.0; // measured in ice bath
+const float TEMP_REFHIGH = 99.2; // boiling water in Stuttgart
+const float TEMP_REFLOW = 0; // ice bath reference
+
 
 
 
@@ -79,16 +85,12 @@ void reconnect() {
   }
 }
 
-float sensorCalibration(float temperature_raw){
+float correctTemperatureSensorValue(float temperature_raw){
   // Use the measured values from ice bath and boiling water for sensor calibration
   // Obviously only valid for one specific sensor
-  float RawHigh = 99.2; // measured in boiling water
-  float RawLow = 1.0; // measured in ice bath
-  float ReferenceHigh = 99.2; // boiling water in Stuttgart
-  float ReferenceLow = 0; // ice bath reference
-  float RawRange = RawHigh - RawLow;
-  float ReferenceRange = ReferenceHigh - ReferenceLow;
-  float CorrectedValue = (((temperature_raw - RawLow) * ReferenceRange) / RawRange) + ReferenceLow;
+  float RawRange = TEMP_RAWHIGH - TEMP_RAWLOW;
+  float ReferenceRange = TEMP_REFHIGH - TEMP_REFLOW;
+  float CorrectedValue = (((temperature_raw - TEMP_RAWLOW) * ReferenceRange) / RawRange) + TEMP_REFLOW;
 
   return CorrectedValue;
 }
@@ -130,7 +132,7 @@ void loopTemperatureLogger() {
   // Read the temperature sensor value
   sensors.requestTemperatures(); // Send the command to get temperatures
   temperature = sensors.getTempCByIndex(0);
-  temperature = sensorCalibration(temperature);
+  temperature = correctTemperatureSensorValue(temperature);
   // Write temperature to character array
   char temperature_cstr [10];
   sprintf(temperature_cstr,"%.2f",temperature);
