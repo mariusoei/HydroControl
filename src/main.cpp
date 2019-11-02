@@ -15,18 +15,6 @@
 #include "temperatureLogger.h"
 #include <ESP8266WiFi.h>
 
-// Debug and Test options
-#define _DEBUG_
-//#define _TEST_
-
-#ifdef _DEBUG_
-#define _PP(a) Serial.print(a);
-#define _PL(a) Serial.println(a);
-#else
-#define _PP(a)
-#define _PL(a)
-#endif
-
 
 #define WIFI_CONNECTION_TIMEOUT 20
 const char* ssid = "***REMOVED***";
@@ -82,34 +70,31 @@ void setup_wifi() {
 
 
 void setup() {
-  // put your setup code here, to run once:
-  setup_wifi();
-#if defined(_DEBUG_) || defined(_TEST_)
-  Serial.begin(115200);
-  delay(2000);
-  _PL("Scheduler Template: setup()");
-#endif
+    // put your setup code here, to run once:
+    setup_wifi();
+    Serial.begin(115200);
+    delay(2000);
+    Serial.println("Scheduler Template: setup()");
 }
 
 void loop() {
-  ts.execute();
+    ts.execute();
 }
 
-
 void publishWaterTemperature_callback() {
-Serial.print(millis());
-_PL(": publishing water temperature");
-//TODO: Add code
+    Serial.print(millis());
+    Serial.println(": publishing water temperature");
+    //TODO: Add code
 }
 
 void measureWaterTemperature_callback() {
-Serial.print(millis());
-_PL(": measuring water temperature");
-//TODO: Add code
+    Serial.print(millis());
+    Serial.println(": measuring water temperature");
+    //TODO: Add code
 }
 
 void updateOledDisplay_callback() {
-Serial.print(millis());
-_PL(": updating OLED display");
-//TODO: Add code
+    Serial.print(millis());
+    Serial.println(": updating OLED display");
+    //TODO: Add code
 }
