@@ -106,10 +106,6 @@ bool checkTempMeasurementPlausibility(float temperature_C){
 
 
 void setupTemperatureLogger() {
-  Serial.begin(9600);
-  Serial.println();
-  Serial.println();
-
   // Start up the sensor library
   sensors.begin();
 

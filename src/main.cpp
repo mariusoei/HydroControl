@@ -71,10 +71,11 @@ void setup_wifi() {
 
 void setup() {
     // put your setup code here, to run once:
-    setup_wifi();
     Serial.begin(115200);
-    delay(2000);
-    Serial.println("Scheduler Template: setup()");
+    setup_wifi();
+    setupTemperatureLogger();
+    delay(100);
+    Serial.println("Scheduler: setup complete");
 }
 
 void loop() {
@@ -84,17 +85,17 @@ void loop() {
 void publishWaterTemperature_callback() {
     Serial.print(millis());
     Serial.println(": publishing water temperature");
-    //TODO: Add code
+    publishWaterTemperature();
 }
 
 void measureWaterTemperature_callback() {
     Serial.print(millis());
     Serial.println(": measuring water temperature");
-    //TODO: Add code
+    measureWaterTemperature();
 }
 
 void updateOledDisplay_callback() {
     Serial.print(millis());
     Serial.println(": updating OLED display");
-    //TODO: Add code
+    updateOledDisplay();
 }
