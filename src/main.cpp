@@ -35,8 +35,9 @@ const char* password = "***REMOVED***";
 // Scheduler
 Scheduler ts;
 
-void task1Callback();
-void task2Callback();
+void publishWaterTemperature_callback();
+void measureWaterTemperature_callback();
+void updateOledDisplay_callback();
 
 /*
   Scheduling defines:
@@ -49,9 +50,11 @@ void task2Callback();
   TASK_ONCE
   TASK_NOTIMEOUT
 */
-
-Task t1 (100 * TASK_MILLISECOND, TASK_FOREVER, &task1Callback, &ts, true);
-Task t2 (TASK_IMMEDIATE, 100, &task2Callback, &ts, true);
+// Define all tasks
+// Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
+Task task_publishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &publishWaterTemperature_callback, &ts, true);
+Task task_measureWaterTemperature (5 * TASK_SECOND, TASK_FOREVER, &measureWaterTemperature_callback, &ts, true);
+Task task_updateOledDisplay(200 * TASK_MILLISECOND, TASK_FOREVER, &updateOledDisplay_callback, &ts, true);
 
 
 void setup_wifi() {
@@ -80,6 +83,7 @@ void setup_wifi() {
 
 void setup() {
   // put your setup code here, to run once:
+  setup_wifi();
 #if defined(_DEBUG_) || defined(_TEST_)
   Serial.begin(115200);
   delay(2000);
@@ -92,14 +96,20 @@ void loop() {
 }
 
 
-void task1Callback() {
+void publishWaterTemperature_callback() {
 Serial.print(millis());
-_PL(": task1Callback()");
-
+_PL(": publishing water temperature");
+//TODO: Add code
 }
 
-void task2Callback() {
+void measureWaterTemperature_callback() {
 Serial.print(millis());
-_PL(": task2Callb()");
+_PL(": measuring water temperature");
+//TODO: Add code
+}
 
+void updateOledDisplay_callback() {
+Serial.print(millis());
+_PL(": updating OLED display");
+//TODO: Add code
 }
