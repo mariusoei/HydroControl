@@ -1,4 +1,4 @@
-#include "temperatureLogger.h"
+#include "TemperatureLogger.h"
 
 // Arduino header
 #include <Arduino.h>

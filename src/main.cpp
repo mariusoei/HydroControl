@@ -12,8 +12,9 @@
 // #define _TASK_OO_CALLBACKS      // Support for dynamic callback method binding
 #include <TaskScheduler.h>
 
-#include "temperatureLogger.h"
+#include "TemperatureLogger.h"
 #include <ESP8266WiFi.h>
+#include <A4988.h>
 
 
 #define WIFI_CONNECTION_TIMEOUT 20
