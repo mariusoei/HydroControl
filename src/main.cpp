@@ -14,7 +14,8 @@
 
 #include "TemperatureLogger.h"
 #include <ESP8266WiFi.h>
-#include <A4988.h>
+
+#include "PumpController.h"
 
 
 #define WIFI_CONNECTION_TIMEOUT 20
@@ -27,6 +28,9 @@ Scheduler ts;
 void publishWaterTemperature_callback();
 void measureWaterTemperature_callback();
 void updateOledDisplay_callback();
+
+void phControlUpdate_callback();
+void phControlStepperAction_callback();
 
 /*
   Scheduling defines:
@@ -44,6 +48,8 @@ void updateOledDisplay_callback();
 Task task_publishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &publishWaterTemperature_callback, &ts, true);
 Task task_measureWaterTemperature (5 * TASK_SECOND, TASK_FOREVER, &measureWaterTemperature_callback, &ts, true);
 Task task_updateOledDisplay(200 * TASK_MILLISECOND, TASK_FOREVER, &updateOledDisplay_callback, &ts, true);
+Task task_phControlUpdate(5 * TASK_MINUTE, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
+Task task_phControlStepperAction(TASK_MILLISECOND, TASK_FOREVER, &phControlStepperAction_callback, &ts, true);
 
 
 void setup_wifi() {
@@ -99,4 +105,16 @@ void updateOledDisplay_callback() {
     Serial.print(millis());
     Serial.println(": updating OLED display");
     updateOledDisplay();
+}
+
+void phControlUpdate_callback(){
+    Serial.print(millis());
+    Serial.println(": running pH controller update");
+    // ToDo: add function call
+}
+
+void phControlStepperAction_callback(){
+    Serial.print(millis());
+    Serial.println(": stepper action");
+    // ToDo: add function call
 }
