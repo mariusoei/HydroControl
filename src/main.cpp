@@ -22,11 +22,17 @@
 const char* ssid = "***REMOVED***";
 const char* password = "***REMOVED***";
 
+#define PIN_DIR 1
+#define PIN_STEP 2
+#define PIN_SLEEP 3
+
+// PH Controller
+PumpController phControl(PIN_DIR, PIN_STEP, PIN_SLEEP);
+
 // Scheduler
 Scheduler ts;
 
-void publishWaterTemperature_callback();
-void measureWaterTemperature_callback();
+void measureAndPublishWaterTemperature_callback();
 void updateOledDisplay_callback();
 
 void phControlUpdate_callback();
@@ -45,8 +51,7 @@ void phControlStepperAction_callback();
 */
 // Define all tasks
 // Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
-Task task_publishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &publishWaterTemperature_callback, &ts, true);
-Task task_measureWaterTemperature (5 * TASK_SECOND, TASK_FOREVER, &measureWaterTemperature_callback, &ts, true);
+Task task_measureAndPublishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
 Task task_updateOledDisplay(200 * TASK_MILLISECOND, TASK_FOREVER, &updateOledDisplay_callback, &ts, true);
 Task task_phControlUpdate(5 * TASK_MINUTE, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
 Task task_phControlStepperAction(TASK_MILLISECOND, TASK_FOREVER, &phControlStepperAction_callback, &ts, true);
@@ -61,7 +66,7 @@ void setup_wifi() {
 
   WiFi.begin(ssid, password);
 
-  for(int millis_waited=0; (millis_waited<1000*WIFI_CONNECTION_TIMEOUT)&&(WiFi.status() != WL_CONNECTED); millis_waited+=500){
+  while(WiFi.status() != WL_CONNECTED){
     delay(500);
     Serial.print(".");
   }
@@ -89,16 +94,11 @@ void loop() {
     ts.execute();
 }
 
-void publishWaterTemperature_callback() {
+void measureAndPublishWaterTemperature_callback() {
     Serial.print(millis());
     Serial.println(": publishing water temperature");
-    publishWaterTemperature();
-}
-
-void measureWaterTemperature_callback() {
-    Serial.print(millis());
-    Serial.println(": measuring water temperature");
     measureWaterTemperature();
+    publishWaterTemperature();
 }
 
 void updateOledDisplay_callback() {
@@ -110,11 +110,13 @@ void updateOledDisplay_callback() {
 void phControlUpdate_callback(){
     Serial.print(millis());
     Serial.println(": running pH controller update");
-    // ToDo: add function call
+    //TODO: use measurement value for pH
+    float ph = 6.5;
+    phControl.updateController(ph);
 }
 
 void phControlStepperAction_callback(){
     Serial.print(millis());
     Serial.println(": stepper action");
-    // ToDo: add function call
+    phControl.stepperUpdate();
 }
