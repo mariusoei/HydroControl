@@ -1,7 +1,7 @@
-#include "TemperatureLogger.h"
+#include "SensorLogger.h"
 
 // Arduino header
-#include <Arduino.h>
+// #include <Arduino.h>
 // Includes for the DS18B20 sensor
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -16,7 +16,7 @@
 OneWire oneWire(ONE_WIRE_BUS_TEMPSENSOR);
 
 // Pass our oneWire reference to Dallas Temperature. 
-DallasTemperature sensors(&oneWire);
+DallasTemperature tempSensors(&oneWire);
 
 const char* mqtt_server = "homeserver01.local";
 const int mqtt_port = 1883;
@@ -24,13 +24,9 @@ const int mqtt_port = 1883;
 const char* mqtt_user = "sensors";
 const char* mqtt_password = "mariusmqttsensors12";
 
-const char* mqtt_sensorTopic = "home-assistant/sensor/temperatureC/sensor1";
+const char* mqtt_temperatureTopic = "hydrocontrol/sensor/temperatureC/sensor1";
+const char* mqtt_phTopic = "hydrocontrol/sensor/ph/sensor1";
 const String clientId = "HydroControl";
-
-
-
-const float TEMP_MAX_C = 50; // maximum realistic temperatureC
-const float TEMP_MIN_C = -10; // and minimum (reject measurement if outside range)
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -45,7 +41,9 @@ char msg[50];
 // Initialize the OLED display using Wire library
 // D3 -> SDA
 // D5 -> SCL
-SSD1306Wire  display(0x3c, D3, D5);
+#define OLED_PIN_SDA D3
+#define OLED_PIN_SCL D5
+SSD1306Wire  display(0x3c, OLED_PIN_SDA, OLED_PIN_SCL);
 
 // Variable for the sensor value (in deg C)
 float temperatureC;
@@ -54,7 +52,7 @@ char temperature_cstr [10];
 // Boolean for plausibility (only published if plausible)
 bool temperaturePlausible;
 
-// Measured calibration values for this specific sensor
+// Measured calibration values for this specific temperature sensor
 const float TEMP_RAWHIGH = 99.2; // measured in boiling water
 const float TEMP_RAWLOW = 1.0; // measured in ice bath
 const float TEMP_REFHIGH = 99.2; // boiling water in Stuttgart
@@ -62,6 +60,28 @@ const float TEMP_REFLOW = 0; // ice bath reference
 const float TEMP_RAW_RANGE = TEMP_RAWHIGH - TEMP_RAWLOW;
 const float TEMP_REF_RANGE = TEMP_REFHIGH - TEMP_REFLOW;
 
+const float TEMP_MAX_C = 50; // maximum realistic temperatureC
+const float TEMP_MIN_C = -10; // and minimum (reject measurement if outside range)
+
+
+
+
+#include <AnalogPHMeter.h>
+#include <EEPROM.h>
+
+#define PHSENSOR_PIN A0
+AnalogPHMeter pHSensor(PHSENSOR_PIN);
+const unsigned int pHCalibrationValueAddress = 0;
+
+// Variable for the ph sensor value
+float ph;
+// And for the value printed to a character array
+char ph_cstr [10];
+// Boolean for plausibility (only published if plausible)
+bool phPlausible;
+
+const float PH_MAX = 9.0f;
+const float PH_MIN = 4.5f;
 
 
 bool MQTT_reconnectOnce() {
@@ -88,7 +108,7 @@ void MQTT_reconnect() {
   }
 }
 
-float applySensorCalibration(float temperature_raw){
+float applyTemperatureSensorCalibration(float temperature_raw){
   // Use the measured values from ice bath and boiling water for sensor calibration
   float CorrectedValue = (((temperature_raw - TEMP_RAWLOW) * TEMP_REF_RANGE) / TEMP_RAW_RANGE) + TEMP_REFLOW;
   return CorrectedValue;
@@ -104,10 +124,25 @@ bool checkTempMeasurementPlausibility(float temperature_C){
   return plausible;
 }
 
+bool checkPHMeasurementPlausibility(float ph){
+  // Check the measured value for plausibility
+  bool plausible = true;
 
-void setupTemperatureLogger() {
+  if(ph>PH_MAX) plausible = false;
+  if(ph<PH_MIN) plausible = false;
+
+  return plausible;
+}
+
+void setupLogger() {
   // Start up the sensor library
-  sensors.begin();
+  tempSensors.begin();
+
+  // Get pH sensor calibration from EEPROM
+  struct PHCalibrationValue pHCalibrationValue;
+  EEPROM.get(pHCalibrationValueAddress, pHCalibrationValue);
+  pHSensor.initialize(pHCalibrationValue);
+
 
   // Initialising the UI will init the display too.
   display.init();
@@ -122,14 +157,23 @@ void setupTemperatureLogger() {
 
 void measureWaterTemperature(){
   // Read the temperatureC sensor value
-  sensors.requestTemperatures(); // Send the command to get temperatures
-  temperatureC = sensors.getTempCByIndex(0);
-  temperatureC = applySensorCalibration(temperatureC);
+  tempSensors.requestTemperatures(); // Send the command to get temperatures
+  temperatureC = tempSensors.getTempCByIndex(0);
+  temperatureC = applyTemperatureSensorCalibration(temperatureC);
   // Write temperatureC to character array
   sprintf(temperature_cstr,"%.2f",temperatureC);
 
   // Check plausibility
   temperaturePlausible = checkTempMeasurementPlausibility(temperatureC);
+}
+
+void measurePH(){
+  // Read the sensor value
+  ph = pHSensor.singleReading().getpH();
+  // Write ph value to character array
+  sprintf(ph_cstr,"%.2f",ph);
+  // Check plausibility
+  phPlausible = checkPHMeasurementPlausibility(ph);
 }
 
 void updateOledDisplay(){
@@ -152,6 +196,18 @@ void publishWaterTemperature() {
   if (mqttClient.connected()&&temperaturePlausible){
     mqttClient.loop();
     // publish sensor value as MQTT message
-    mqttClient.publish(mqtt_sensorTopic, temperature_cstr);
+    mqttClient.publish(mqtt_temperatureTopic, temperature_cstr);
+  }
+}
+
+void publishPH() {
+  if (!mqttClient.connected()) {
+        // Only try once so the display update isn't blocked
+        MQTT_reconnectOnce();
+  }
+  if (mqttClient.connected()&&phPlausible){
+    mqttClient.loop();
+    // publish sensor value as MQTT message
+    mqttClient.publish(mqtt_phTopic, ph_cstr);
   }
 }

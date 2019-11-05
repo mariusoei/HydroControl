@@ -12,7 +12,7 @@
 // #define _TASK_OO_CALLBACKS      // Support for dynamic callback method binding
 #include <TaskScheduler.h>
 
-#include "TemperatureLogger.h"
+#include "SensorLogger.h"
 #include <ESP8266WiFi.h>
 
 #include "PumpController.h"
@@ -33,6 +33,7 @@ PumpController phControl(PIN_DIR, PIN_STEP, PIN_SLEEP);
 Scheduler ts;
 
 void measureAndPublishWaterTemperature_callback();
+void measureAndPublishPH_callback();
 void updateOledDisplay_callback();
 
 void phControlUpdate_callback();
@@ -52,6 +53,7 @@ void phControlStepperAction_callback();
 // Define all tasks
 // Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
 Task task_measureAndPublishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
+Task task_measureAndPublishPH (60 * TASK_SECOND, TASK_FOREVER, &measureAndPublishPH_callback, &ts, true);
 Task task_updateOledDisplay(200 * TASK_MILLISECOND, TASK_FOREVER, &updateOledDisplay_callback, &ts, true);
 Task task_phControlUpdate(5 * TASK_MINUTE, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
 Task task_phControlStepperAction(TASK_MILLISECOND, TASK_FOREVER, &phControlStepperAction_callback, &ts, true);
@@ -85,7 +87,7 @@ void setup() {
     // put your setup code here, to run once:
     Serial.begin(115200);
     setup_wifi();
-    setupTemperatureLogger();
+    setupLogger();
     delay(100);
     Serial.println("Scheduler: setup complete");
 }
@@ -96,9 +98,16 @@ void loop() {
 
 void measureAndPublishWaterTemperature_callback() {
     Serial.print(millis());
-    Serial.println(": publishing water temperature");
+    Serial.println(": measuring, publishing water temperature");
     measureWaterTemperature();
     publishWaterTemperature();
+}
+
+void measureAndPublishPH_callback() {
+    Serial.print(millis());
+    Serial.println(": measuring, publishing ph value");
+    measurePH();
+    publishPH();
 }
 
 void updateOledDisplay_callback() {
