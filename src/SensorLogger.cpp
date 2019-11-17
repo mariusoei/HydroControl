@@ -10,8 +10,6 @@
 #include <PubSubClient.h>
 
 
-// DS18B20 data wire is plugged into port D2 on the ESP
-#define ONE_WIRE_BUS_TEMPSENSOR D2
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperatureC ICs)
 OneWire oneWire(ONE_WIRE_BUS_TEMPSENSOR);
 
@@ -39,10 +37,6 @@ char msg[50];
 #include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
 
 // Initialize the OLED display using Wire library
-// D3 -> SDA
-// D5 -> SCL
-#define OLED_PIN_SDA D3
-#define OLED_PIN_SCL D5
 SSD1306Wire  display(0x3c, OLED_PIN_SDA, OLED_PIN_SCL);
 
 // Variable for the sensor value (in deg C)
@@ -69,7 +63,6 @@ const float TEMP_MIN_C = -10; // and minimum (reject measurement if outside rang
 #include <AnalogPHMeter.h>
 #include <EEPROM.h>
 
-#define PHSENSOR_PIN A0
 AnalogPHMeter pHSensor(PHSENSOR_PIN);
 const unsigned int pHCalibrationValueAddress = 0;
 

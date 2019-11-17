@@ -22,9 +22,9 @@
 const char* ssid = "***REMOVED***";
 const char* password = "***REMOVED***";
 
-#define PIN_DIR 1
-#define PIN_STEP 2
-#define PIN_SLEEP 3
+#define PIN_DIR D2
+#define PIN_STEP D3
+#define PIN_SLEEP D4
 
 // PH Controller
 PumpController phControl(PIN_DIR, PIN_STEP, PIN_SLEEP);

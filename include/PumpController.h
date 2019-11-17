@@ -7,9 +7,11 @@
 #define RPM 10
 #define MICROSTEPS 1
 #define DEG_PER_ML 90
-#define MS1 10
-#define MS2 11
-#define MS3 12
+
+
+#define MS1 D5
+#define MS2 D6
+#define MS3 D7
 
 class PumpController
 {
