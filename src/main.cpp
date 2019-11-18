@@ -29,6 +29,8 @@ const char* password = "***REMOVED***";
 // PH Controller
 PumpController phControl(PIN_DIR, PIN_STEP, PIN_SLEEP);
 
+#define T_CONTROLLER (20*TASK_SECOND)
+
 // Scheduler
 Scheduler ts;
 
@@ -54,9 +56,9 @@ void phControlStepperAction_callback();
 // Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
 Task task_measureAndPublishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
 Task task_measureAndPublishPH (60 * TASK_SECOND, TASK_FOREVER, &measureAndPublishPH_callback, &ts, true);
-Task task_updateOledDisplay(200 * TASK_MILLISECOND, TASK_FOREVER, &updateOledDisplay_callback, &ts, true);
-Task task_phControlUpdate(5 * TASK_MINUTE, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
-Task task_phControlStepperAction(TASK_MILLISECOND, TASK_FOREVER, &phControlStepperAction_callback, &ts, true);
+Task task_updateOledDisplay(1 * TASK_SECOND, TASK_FOREVER, &updateOledDisplay_callback, &ts, true);
+Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
+// Task task_phControlStepperAction(TASK_MILLISECOND, TASK_FOREVER, &phControlStepperAction_callback, &ts, true);
 
 
 void setup_wifi() {
@@ -125,7 +127,7 @@ void phControlUpdate_callback(){
 }
 
 void phControlStepperAction_callback(){
-    Serial.print(millis());
-    Serial.println(": stepper action");
+    // Serial.print(millis());
+    // Serial.println(": stepper action");
     phControl.stepperUpdate();
 }

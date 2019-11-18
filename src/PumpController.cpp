@@ -1,6 +1,7 @@
 #include "PumpController.h"
 
 void PumpController::updateController(float y){
+    stepper.begin(RPM, MICROSTEPS);
     this->y = y;
 
     e = ref - y;
@@ -11,16 +12,20 @@ void PumpController::updateController(float y){
     u = K * e;
 
     // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
-    stepper.setEnableActiveState(LOW);
+    // stepper.setEnableActiveState(LOW);
     stepper.enable();
 
-    // set the motor to move continuously for a reasonable time to hit the stopper
-    // let's say 100 complete revolutions (arbitrary number)
-    stepper.startRotate(u*DEG_PER_ML);                     // or in degrees
+    // Start stepper motion
+    Serial.print("Moving stepper (deg): ");
+    Serial.println(u*DEG_PER_ML);
+    stepper.rotate(u*DEG_PER_ML);
+    // stepper.startRotate(u*DEG_PER_ML);
 }
 
 void PumpController::stepperUpdate(){
     unsigned wait_time_micros = stepper.nextAction();
+    // Serial.print("Next motion in ");
+    // Serial.println(wait_time_micros/1000.0f);
 
     // 0 wait time indicates the motor has stopped
     if (wait_time_micros <= 0) {
