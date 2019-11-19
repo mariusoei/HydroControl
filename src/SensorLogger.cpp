@@ -1,7 +1,5 @@
 #include "SensorLogger.h"
 
-// Arduino header
-// #include <Arduino.h>
 // Includes for the DS18B20 sensor
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -9,6 +7,9 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
+
+#include <AnalogPHMeter.h>
+#include <EEPROM.h>
 
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperatureC ICs)
 OneWire oneWire(ONE_WIRE_BUS_TEMPSENSOR);
@@ -50,13 +51,12 @@ const float TEMP_MAX_C = 50; // maximum realistic temperatureC
 const float TEMP_MIN_C = -10; // and minimum (reject measurement if outside range)
 
 
-
-
-#include <AnalogPHMeter.h>
-#include <EEPROM.h>
-
 AnalogPHMeter pHSensor(PHSENSOR_PIN);
 const unsigned int pHCalibrationValueAddress = 0;
+
+//TODO: Insert correct values
+#define PHCAL_HIGH_REF 6.8f
+#define PHCAL_LOW_REF 4.0f
 
 // Variable for the ph sensor value
 float ph;
@@ -64,10 +64,9 @@ float ph;
 char ph_cstr [10];
 // Boolean for plausibility (only published if plausible)
 bool phPlausible;
-
+// Min and max plausible values
 const float PH_MAX = 9.0f;
 const float PH_MIN = 4.5f;
-
 
 bool MQTT_reconnectOnce() {
   // Loop until we're reconnected
@@ -137,25 +136,41 @@ void setupLogger() {
 
 }
 
-void measureWaterTemperature(){
+float measureWaterTemperature(){
   // Read the temperatureC sensor value
+  Serial.print("Measuring water temperature: ");
   tempSensors.requestTemperatures(); // Send the command to get temperatures
   temperatureC = tempSensors.getTempCByIndex(0);
   temperatureC = applyTemperatureSensorCalibration(temperatureC);
+  Serial.print(temperatureC);
   // Write temperatureC to character array
   sprintf(temperature_cstr,"%.2f",temperatureC);
 
   // Check plausibility
   temperaturePlausible = checkTempMeasurementPlausibility(temperatureC);
+  if(temperaturePlausible){
+    Serial.println(" (plausible)");
+  }else{
+    Serial.println(" (not plausible!)");
+  }
+  return temperatureC;
 }
 
-void measurePH(){
+float measurePH(){
+  Serial.print("Measuring ph value: ");
   // Read the sensor value
   ph = pHSensor.singleReading().getpH();
+  Serial.print(ph);
   // Write ph value to character array
   sprintf(ph_cstr,"%.2f",ph);
   // Check plausibility
   phPlausible = checkPHMeasurementPlausibility(ph);
+  if(phPlausible){
+    Serial.println(" (plausible)");
+  }else{
+    Serial.println(" (not plausible!)");
+  }
+  return ph;
 }
 
 

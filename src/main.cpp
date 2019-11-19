@@ -115,8 +115,7 @@ void measureAndPublishPH_callback() {
 void phControlUpdate_callback(){
     Serial.print(millis());
     Serial.println(": running pH controller update");
-    //TODO: use measurement value for pH
-    float ph = 6.5;
+    float ph = measurePH();
     phControl.updateController(ph);
 }
 

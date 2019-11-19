@@ -9,17 +9,14 @@
 #define PHCAL_LOW_PIN D6
 #define PHCAL_HIGH_PIN D5
 
-//TODO: Insert correct values
-#define PHCAL_HIGH_REF 6.8f
-#define PHCAL_LOW_REF 4.0f
 
 
 void setupLogger();
 
 void publishWaterTemperature();
-void measureWaterTemperature();
+float measureWaterTemperature();
 void publishPH();
-void measurePH();
+float measurePH();
 
 void phCalibrateLow();
 void phCalibrateHigh();
