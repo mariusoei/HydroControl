@@ -5,13 +5,13 @@
 
 #define MOTOR_STEPS 200
 #define RPM 10
-#define MICROSTEPS 4
+#define MICROSTEPS 16
 #define DEG_PER_ML 360.0f
 
 
-#define MS1 D5
-#define MS2 D6
-#define MS3 D7
+// #define MS1 D5
+// #define MS2 D6
+// #define MS3 D7
 
 class PumpController
 {
@@ -25,7 +25,7 @@ private:
     float u; // Control input (ml for next interval)
 
 public:
-    PumpController(uint8_t pin_dir, uint8_t pin_step, uint8_t pin_sleep) : stepper(MOTOR_STEPS, pin_dir, pin_step, pin_sleep, MS1, MS2, MS3) {}
+    PumpController(uint8_t pin_dir, uint8_t pin_step, uint8_t pin_sleep) : stepper(MOTOR_STEPS, pin_dir, pin_step, pin_sleep) {}
     void updateController(float y);
     void stepperUpdate();
 };

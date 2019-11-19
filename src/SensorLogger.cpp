@@ -37,7 +37,7 @@ char msg[50];
 #include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
 
 // Initialize the OLED display using Wire library
-SSD1306Wire  display(0x3c, OLED_PIN_SDA, OLED_PIN_SCL);
+// SSD1306Wire  display(0x3c, OLED_PIN_SDA, OLED_PIN_SCL);
 
 // Variable for the sensor value (in deg C)
 float temperatureC;
@@ -128,6 +128,10 @@ bool checkPHMeasurementPlausibility(float ph){
 }
 
 void setupLogger() {
+  // Set calibration button pins as inputs
+  pinMode(PHCAL_LOW_PIN,INPUT);
+  pinMode(PHCAL_HIGH_PIN,INPUT);
+
   // Start up the sensor library
   tempSensors.begin();
 
@@ -137,11 +141,11 @@ void setupLogger() {
   pHSensor.initialize(pHCalibrationValue);
 
 
-  // Initialising the UI will init the display too.
-  display.init();
+  // // Initialising the UI will init the display too.
+  // display.init();
 
-  display.flipScreenVertically();
-  display.setFont(ArialMT_Plain_10);
+  // display.flipScreenVertically();
+  // display.setFont(ArialMT_Plain_10);
 
   // Setup mqtt
   mqttClient.setServer(mqtt_server, mqtt_port);
@@ -169,16 +173,16 @@ void measurePH(){
   phPlausible = checkPHMeasurementPlausibility(ph);
 }
 
-void updateOledDisplay(){
-  // clear the display
-  display.clear();
+// void updateOledDisplay(){
+//   // clear the display
+//   display.clear();
    
-  display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.setFont(ArialMT_Plain_24);
-  display.drawString(0,0, String(temperatureC));
-  // write the buffer to the display
-  display.display();
-}
+//   display.setTextAlignment(TEXT_ALIGN_LEFT);
+//   display.setFont(ArialMT_Plain_24);
+//   display.drawString(0,0, String(temperatureC));
+//   // write the buffer to the display
+//   display.display();
+// }
 
 
 void publishWaterTemperature() {
@@ -203,4 +207,17 @@ void publishPH() {
     // publish sensor value as MQTT message
     mqttClient.publish(mqtt_phTopic, ph_cstr);
   }
+}
+
+
+void phCalibrateLow() {
+  Serial.println("Calibrating ph value (LOW)");
+  pHSensor.calibrationLow(PHCAL_LOW_REF);
+  EEPROM.put(pHCalibrationValueAddress, pHSensor.getCalibrationValue());
+}
+
+void phCalibrateHigh() {
+  Serial.println("Calibrating ph value (HIGH)");
+  pHSensor.calibrationMid(PHCAL_HIGH_REF);
+  EEPROM.put(pHCalibrationValueAddress, pHSensor.getCalibrationValue());
 }

@@ -34,12 +34,14 @@ PumpController phControl(PIN_DIR, PIN_STEP, PIN_SLEEP);
 // Scheduler
 Scheduler ts;
 
+// Forward declaration of callbacks
 void measureAndPublishWaterTemperature_callback();
 void measureAndPublishPH_callback();
-void updateOledDisplay_callback();
+// void updateOledDisplay_callback();
 
 void phControlUpdate_callback();
 void phControlStepperAction_callback();
+void phCalibrateButtonCheck_callback();
 
 /*
   Scheduling defines:
@@ -56,9 +58,11 @@ void phControlStepperAction_callback();
 // Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
 Task task_measureAndPublishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
 Task task_measureAndPublishPH (60 * TASK_SECOND, TASK_FOREVER, &measureAndPublishPH_callback, &ts, true);
-Task task_updateOledDisplay(1 * TASK_SECOND, TASK_FOREVER, &updateOledDisplay_callback, &ts, true);
+// Task task_updateOledDisplay(1 * TASK_SECOND, TASK_FOREVER, &updateOledDisplay_callback, &ts, true);
 Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
 // Task task_phControlStepperAction(TASK_MILLISECOND, TASK_FOREVER, &phControlStepperAction_callback, &ts, true);
+Task task_phCalibrateButtonCheck(100*TASK_MILLISECOND, TASK_FOREVER, &phCalibrateButtonCheck_callback, &ts, true);
+
 
 
 void setup_wifi() {
@@ -112,11 +116,11 @@ void measureAndPublishPH_callback() {
     publishPH();
 }
 
-void updateOledDisplay_callback() {
-    Serial.print(millis());
-    Serial.println(": updating OLED display");
-    updateOledDisplay();
-}
+// void updateOledDisplay_callback() {
+//     Serial.print(millis());
+//     Serial.println(": updating OLED display");
+//     updateOledDisplay();
+// }
 
 void phControlUpdate_callback(){
     Serial.print(millis());
@@ -130,4 +134,13 @@ void phControlStepperAction_callback(){
     // Serial.print(millis());
     // Serial.println(": stepper action");
     phControl.stepperUpdate();
+}
+
+void phCalibrateButtonCheck_callback(){
+    // Check both calibration buttons and perform calibration if one of them is pressed
+    bool lowPressed = !((bool) digitalRead(PHCAL_LOW_PIN));
+    bool highPressed = !((bool) digitalRead(PHCAL_HIGH_PIN));
+
+    if(lowPressed && !highPressed) phCalibrateLow();
+    if(highPressed && !lowPressed) phCalibrateHigh();
 }

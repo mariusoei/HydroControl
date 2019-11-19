@@ -19,6 +19,7 @@ void PumpController::updateController(float y){
     Serial.print("Moving stepper (deg): ");
     Serial.println(u*DEG_PER_ML);
     stepper.rotate(u*DEG_PER_ML);
+    stepper.disable();   
     // stepper.startRotate(u*DEG_PER_ML);
 }
 
