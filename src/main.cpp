@@ -37,10 +37,8 @@ Scheduler ts;
 // Forward declaration of callbacks
 void measureAndPublishWaterTemperature_callback();
 void measureAndPublishPH_callback();
-// void updateOledDisplay_callback();
 
 void phControlUpdate_callback();
-void phControlStepperAction_callback();
 void phCalibrateButtonCheck_callback();
 
 /*
@@ -58,9 +56,7 @@ void phCalibrateButtonCheck_callback();
 // Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
 Task task_measureAndPublishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
 Task task_measureAndPublishPH (60 * TASK_SECOND, TASK_FOREVER, &measureAndPublishPH_callback, &ts, true);
-// Task task_updateOledDisplay(1 * TASK_SECOND, TASK_FOREVER, &updateOledDisplay_callback, &ts, true);
 Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
-// Task task_phControlStepperAction(TASK_MILLISECOND, TASK_FOREVER, &phControlStepperAction_callback, &ts, true);
 Task task_phCalibrateButtonCheck(100*TASK_MILLISECOND, TASK_FOREVER, &phCalibrateButtonCheck_callback, &ts, true);
 
 
@@ -116,24 +112,12 @@ void measureAndPublishPH_callback() {
     publishPH();
 }
 
-// void updateOledDisplay_callback() {
-//     Serial.print(millis());
-//     Serial.println(": updating OLED display");
-//     updateOledDisplay();
-// }
-
 void phControlUpdate_callback(){
     Serial.print(millis());
     Serial.println(": running pH controller update");
     //TODO: use measurement value for pH
     float ph = 6.5;
     phControl.updateController(ph);
-}
-
-void phControlStepperAction_callback(){
-    // Serial.print(millis());
-    // Serial.println(": stepper action");
-    phControl.stepperUpdate();
 }
 
 void phCalibrateButtonCheck_callback(){

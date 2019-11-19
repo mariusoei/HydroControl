@@ -13,10 +13,6 @@
 #define PHCAL_HIGH_REF 6.8f
 #define PHCAL_LOW_REF 4.0f
 
-// OLED pin mapping
-// #define OLED_PIN_SDA D3
-// #define OLED_PIN_SCL D5
-
 
 void setupLogger();
 
@@ -24,7 +20,6 @@ void publishWaterTemperature();
 void measureWaterTemperature();
 void publishPH();
 void measurePH();
-// void updateOledDisplay();
 
 void phCalibrateLow();
 void phCalibrateHigh();

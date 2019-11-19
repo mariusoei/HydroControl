@@ -31,14 +31,6 @@ PubSubClient mqttClient(espClient);
 long lastMsg = 0;
 char msg[50];
 
-
-// Wire library for I2C connection to OLED display
-#include <Wire.h>  // Only needed for Arduino 1.6.5 and earlier
-#include "SSD1306Wire.h" // legacy include: `#include "SSD1306.h"`
-
-// Initialize the OLED display using Wire library
-// SSD1306Wire  display(0x3c, OLED_PIN_SDA, OLED_PIN_SCL);
-
 // Variable for the sensor value (in deg C)
 float temperatureC;
 // And for the value printed to a character array
@@ -140,13 +132,6 @@ void setupLogger() {
   EEPROM.get(pHCalibrationValueAddress, pHCalibrationValue);
   pHSensor.initialize(pHCalibrationValue);
 
-
-  // // Initialising the UI will init the display too.
-  // display.init();
-
-  // display.flipScreenVertically();
-  // display.setFont(ArialMT_Plain_10);
-
   // Setup mqtt
   mqttClient.setServer(mqtt_server, mqtt_port);
 
@@ -172,17 +157,6 @@ void measurePH(){
   // Check plausibility
   phPlausible = checkPHMeasurementPlausibility(ph);
 }
-
-// void updateOledDisplay(){
-//   // clear the display
-//   display.clear();
-   
-//   display.setTextAlignment(TEXT_ALIGN_LEFT);
-//   display.setFont(ArialMT_Plain_24);
-//   display.drawString(0,0, String(temperatureC));
-//   // write the buffer to the display
-//   display.display();
-// }
 
 
 void publishWaterTemperature() {
