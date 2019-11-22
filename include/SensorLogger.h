@@ -17,6 +17,12 @@ void publishWaterTemperature();
 float measureWaterTemperature();
 void publishPH();
 float measurePH();
+void publishControlInput(double u);
+
+bool checkPHMeasurementPlausibility(double ph);
+bool checkTempMeasurementPlausibility(double temperature_C);
+
+void publish(const char* topic, double value);
 
 void phCalibrateLow();
 void phCalibrateHigh();

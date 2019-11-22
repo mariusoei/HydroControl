@@ -116,7 +116,12 @@ void phControlUpdate_callback(){
     Serial.print(millis());
     Serial.println(": running pH controller update");
     float ph = measurePH();
-    phControl.updateController(ph);
+    if(checkPHMeasurementPlausibility(ph)){
+      phControl.updateController(ph);
+      publishControlInput(phControl.getLastControlInput());
+    }else{
+      Serial.println("PH measurement implausible, not updating controller.");
+    }
 }
 
 void phCalibrateButtonCheck_callback(){

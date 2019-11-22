@@ -25,6 +25,7 @@ const char* mqtt_password = "mariusmqttsensors12";
 
 const char* mqtt_temperatureTopic = "hydrocontrol/sensor/temperatureC/sensor1";
 const char* mqtt_phTopic = "hydrocontrol/sensor/ph/sensor1";
+const char* mqtt_controlInputTopic = "hydrocontrol/actuator/pump/u_ml";
 const String clientId = "HydroControl";
 
 WiFiClient espClient;
@@ -97,7 +98,7 @@ float applyTemperatureSensorCalibration(float temperature_raw){
   return CorrectedValue;
 }
 
-bool checkTempMeasurementPlausibility(float temperature_C){
+bool checkTempMeasurementPlausibility(double temperature_C){
   // Check the measured value for plausibility
   bool plausible = true;
 
@@ -107,7 +108,7 @@ bool checkTempMeasurementPlausibility(float temperature_C){
   return plausible;
 }
 
-bool checkPHMeasurementPlausibility(float ph){
+bool checkPHMeasurementPlausibility(double ph){
   // Check the measured value for plausibility
   bool plausible = true;
 
@@ -174,29 +175,39 @@ float measurePH(){
 
 
 void publishWaterTemperature() {
-  if (!mqttClient.connected()) {
-        // Only try once so the display update isn't blocked
-        MQTT_reconnectOnce();
-  }
-  if (mqttClient.connected()&&temperaturePlausible){
-    mqttClient.loop();
-    // publish sensor value as MQTT message
-    mqttClient.publish(mqtt_temperatureTopic, temperature_cstr);
+  if (temperaturePlausible){
+    publish(mqtt_temperatureTopic,temperatureC);
   }
 }
 
 void publishPH() {
-  if (!mqttClient.connected()) {
-        // Only try once so the display update isn't blocked
-        MQTT_reconnectOnce();
-  }
-  if (mqttClient.connected()&&phPlausible){
-    mqttClient.loop();
-    // publish sensor value as MQTT message
-    mqttClient.publish(mqtt_phTopic, ph_cstr);
+  if (phPlausible){
+    publish(mqtt_phTopic,ph);
   }
 }
 
+void publishControlInput(double u){
+  publish(mqtt_controlInputTopic,u);
+}
+
+void publish(const char* topic, double value) {
+  if (!mqttClient.connected()) {
+        // Only try once so other tasks aren't blocked
+        MQTT_reconnectOnce();
+  }
+  if (mqttClient.connected()){
+    mqttClient.loop();
+    // Print value to character array
+    char cstr [10];
+    sprintf(cstr,"%.2f",value);
+    Serial.print("Publishing to topic '");
+    Serial.print(topic);
+    Serial.print("', value: ");
+    Serial.println(value);
+    // publish sensor value as MQTT message
+    mqttClient.publish(topic, cstr);
+  }
+}
 
 void phCalibrateLow() {
   Serial.println("Calibrating ph value (LOW)");
