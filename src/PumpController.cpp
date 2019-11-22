@@ -11,6 +11,10 @@ void PumpController::updateController(double y){
     // Simple proportional control law
     u = K * e;
 
+    // Upper and lower bounds for control input
+    if(u>u_max) u=u_max; // not more than maximum
+    if(u<u_min) u=0; // no input if requested below minimum
+
     // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
     // stepper.setEnableActiveState(LOW);
     stepper.enable();

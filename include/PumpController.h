@@ -6,7 +6,6 @@
 #define MOTOR_STEPS 200
 #define RPM 60
 #define MICROSTEPS 16
-const double deg_per_ml = 180/50*360.0;
 
 
 // #define MS1 D5
@@ -23,11 +22,15 @@ private:
     double y; // Measurement
     double e; // Control error
     double u; // Control input (ml for next interval)
+    double u_max = 3;
+    double u_min = 0.5;
 
+    const double deg_per_ml = 180/50*360.0;
 public:
     PumpController(uint8_t pin_dir, uint8_t pin_step, uint8_t pin_sleep) : stepper(MOTOR_STEPS, pin_dir, pin_step, pin_sleep) {}
     void updateController(double y);
     void stepperUpdate();
+    double getLastControlInput(){return u;}
 };
  
 #endif
