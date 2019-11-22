@@ -1,6 +1,6 @@
 #include "PumpController.h"
 
-void PumpController::updateController(float y){
+void PumpController::updateController(double y){
     stepper.begin(RPM, MICROSTEPS);
     this->y = y;
 
@@ -17,8 +17,8 @@ void PumpController::updateController(float y){
 
     // Start stepper motion
     Serial.print("Moving stepper (deg): ");
-    Serial.println(u*DEG_PER_ML);
-    stepper.rotate(u*DEG_PER_ML);
+    Serial.println(u*deg_per_ml);
+    stepper.rotate(u*deg_per_ml);
     stepper.disable();   
     // stepper.startRotate(u*DEG_PER_ML);
 }

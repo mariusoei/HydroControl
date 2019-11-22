@@ -54,9 +54,8 @@ const float TEMP_MIN_C = -10; // and minimum (reject measurement if outside rang
 AnalogPHMeter pHSensor(PHSENSOR_PIN);
 const unsigned int pHCalibrationValueAddress = 0;
 
-//TODO: Insert correct values
-#define PHCAL_HIGH_REF 6.8f
-#define PHCAL_LOW_REF 4.0f
+#define PHCAL_HIGH_REF 6.88f
+#define PHCAL_LOW_REF 4.00f
 
 // Variable for the ph sensor value
 float ph;
