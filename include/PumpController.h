@@ -18,7 +18,7 @@ private:
     A4988 stepper;
 
     double K = -1; // Controller proportional gain (ml of ph-down per pH)
-    double ref = 6.0; // Reference value
+    double ref = 5.8; // Reference value
     double y; // Measurement
     double e; // Control error
     double u; // Control input (ml for next interval)
@@ -27,7 +27,7 @@ private:
 
     const double deg_per_ml = 180/50*360.0;
 public:
-    PumpController(uint8_t pin_dir, uint8_t pin_step, uint8_t pin_sleep) : stepper(MOTOR_STEPS, pin_dir, pin_step, pin_sleep) {}
+    PumpController(uint8_t pin_dir, uint8_t pin_step, uint8_t pin_sleep) : stepper(MOTOR_STEPS, pin_dir, pin_step, pin_sleep) {stepper.disable();}
     void updateController(double y);
     void stepperUpdate();
     double getLastControlInput(){return u;}
