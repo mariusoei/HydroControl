@@ -11,6 +11,8 @@
 #include <AnalogPHMeter.h>
 #include <EEPROM.h>
 
+#include "RunningAverage.h"
+
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperatureC ICs)
 OneWire oneWire(ONE_WIRE_BUS_TEMPSENSOR);
 
@@ -62,6 +64,7 @@ const unsigned int pHCalibrationValueAddress = 0;
 
 // Variable for the ph sensor value
 float ph;
+RunningAverage RA_ph(50);
 // And for the value printed to a character array
 char ph_cstr [10];
 // Boolean for plausibility (only published if plausible)
@@ -161,8 +164,12 @@ float measureWaterTemperature(){
 float measurePH(){
   Serial.print("Measuring ph value: ");
   // Read the sensor value
-  ph = pHSensor.singleReading().getpH();
-  Serial.print(ph);
+  float ph_raw = pHSensor.singleReading().getpH();
+  RA_ph.addValue(ph_raw);
+  Serial.print(ph_raw);
+
+  ph = RA_ph.getAverage();
+  Serial.print(" (Average: "); Serial.print(ph); Serial.print(")");
   // Write ph value to character array
   sprintf(ph_cstr,"%.2f",ph);
   // Check plausibility
