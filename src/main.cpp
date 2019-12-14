@@ -34,31 +34,6 @@ PumpController phControl(PIN_DIR, PIN_STEP, PIN_SLEEP);
 // Scheduler
 Scheduler ts;
 
-// Forward declaration of callbacks
-void measureAndPublishWaterTemperature_callback();
-void measureAndPublishPH_callback();
-
-void phControlUpdate_callback();
-void phCalibrateButtonCheck_callback();
-
-/*
-  Scheduling defines:
-  TASK_MILLISECOND
-  TASK_SECOND
-  TASK_MINUTE
-  TASK_HOUR
-  TASK_IMMEDIATE
-  TASK_FOREVER
-  TASK_ONCE
-  TASK_NOTIMEOUT
-*/
-// Define all tasks
-// Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
-Task task_measureAndPublishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
-Task task_measureAndPublishPH (60 * TASK_SECOND, TASK_FOREVER, &measureAndPublishPH_callback, &ts, true);
-Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
-Task task_phCalibrateButtonCheck(100*TASK_MILLISECOND, TASK_FOREVER, &phCalibrateButtonCheck_callback, &ts, true);
-
 
 
 void setup_wifi() {
@@ -105,11 +80,14 @@ void measureAndPublishWaterTemperature_callback() {
     publishWaterTemperature();
 }
 
-void measureAndPublishPH_callback() {
+void publishPH_callback() {
     Serial.print(millis());
-    Serial.println(": measuring, publishing ph value");
-    measurePH();
+    Serial.println(": publishing ph value");
     publishPH();
+}
+
+void measurePH_callback(){
+    measurePH();
 }
 
 void phControlUpdate_callback(){
@@ -132,3 +110,23 @@ void phCalibrateButtonCheck_callback(){
     if(lowPressed && !highPressed) phCalibrateLow();
     if(highPressed && !lowPressed) phCalibrateHigh();
 }
+
+
+/*
+  Scheduling defines:
+  TASK_MILLISECOND
+  TASK_SECOND
+  TASK_MINUTE
+  TASK_HOUR
+  TASK_IMMEDIATE
+  TASK_FOREVER
+  TASK_ONCE
+  TASK_NOTIMEOUT
+*/
+// Define all tasks
+// Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
+Task task_measureAndPublishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
+Task task_publishPH (30 * TASK_SECOND, TASK_FOREVER, &publishPH_callback, &ts, true);
+Task task_measurePH (100 * TASK_MILLISECOND, TASK_FOREVER, &measurePH_callback, &ts, true);
+Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
+Task task_phCalibrateButtonCheck(200*TASK_MILLISECOND, TASK_FOREVER, &phCalibrateButtonCheck_callback, &ts, true);
