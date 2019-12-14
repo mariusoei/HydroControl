@@ -17,7 +17,7 @@
 // PH Controller
 PumpController phControl(PIN_DIR, PIN_STEP, PIN_SLEEP);
 
-#define T_CONTROLLER (20*TASK_SECOND)
+#define T_CONTROLLER (60*TASK_SECOND)
 
 // Scheduler
 Scheduler ts;
@@ -91,8 +91,8 @@ void phCalibrateButtonCheck_callback(){
 */
 // Define all tasks
 // Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
-Task task_measureAndPublishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
-Task task_publishPH (30 * TASK_SECOND, TASK_FOREVER, &publishPH_callback, &ts, true);
+Task task_measureAndPublishWaterTemperature (5 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
+Task task_publishPH (5 * TASK_SECOND, TASK_FOREVER, &publishPH_callback, &ts, true);
 Task task_measurePH (100 * TASK_MILLISECOND, TASK_FOREVER, &measurePH_callback, &ts, true);
 Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
 Task task_phCalibrateButtonCheck(200*TASK_MILLISECOND, TASK_FOREVER, &phCalibrateButtonCheck_callback, &ts, true);

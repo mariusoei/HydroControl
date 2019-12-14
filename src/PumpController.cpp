@@ -16,7 +16,7 @@ void PumpController::updateController(double y){
     if(u<u_min) u=0; // no input if requested below minimum
 
     // if using enable/disable on ENABLE pin (active LOW) instead of SLEEP uncomment next line
-    // stepper.setEnableActiveState(LOW);
+    stepper.setEnableActiveState(LOW);
     stepper.enable();
 
     // Start stepper motion
