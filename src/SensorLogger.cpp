@@ -24,7 +24,9 @@ const char* mqtt_user = "sensors";
 const char* mqtt_password = "mariusmqttsensors12";
 
 const char* mqtt_temperatureTopic = "hydrocontrol/sensor/temperatureC/sensor1";
+const char* mqtt_temperatureTopicRaw = "hydrocontrol/sensor/temperatureC/sensor1/raw";
 const char* mqtt_phTopic = "hydrocontrol/sensor/ph/sensor1";
+const char* mqtt_phTopicRaw = "hydrocontrol/sensor/ph/sensor1/raw";
 const char* mqtt_controlInputTopic = "hydrocontrol/actuator/pump/u_ml";
 const String clientId = "HydroControl";
 
@@ -175,12 +177,14 @@ float measurePH(){
 
 
 void publishWaterTemperature() {
+  publish(mqtt_temperatureTopicRaw,temperatureC);
   if (temperaturePlausible){
     publish(mqtt_temperatureTopic,temperatureC);
   }
 }
 
 void publishPH() {
+  publish(mqtt_phTopicRaw,ph);
   if (phPlausible){
     publish(mqtt_phTopic,ph);
   }
