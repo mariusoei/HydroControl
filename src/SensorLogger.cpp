@@ -63,7 +63,7 @@ const unsigned int pHCalibrationValueAddress = 0;
 #define PHCAL_LOW_REF 4.00f
 
 // Variable for the ph sensor value
-float ph;
+float ph, ph_raw;
 RunningAverage RA_ph(50);
 // And for the value printed to a character array
 char ph_cstr [10];
@@ -164,7 +164,7 @@ float measureWaterTemperature(){
 float measurePH(){
   Serial.print("Measuring ph value: ");
   // Read the sensor value
-  float ph_raw = pHSensor.singleReading().getpH();
+  ph_raw = pHSensor.singleReading().getpH();
   RA_ph.addValue(ph_raw);
   Serial.print(ph_raw);
 
