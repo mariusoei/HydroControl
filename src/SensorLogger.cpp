@@ -29,6 +29,7 @@ const char* mqtt_temperatureTopic = "hydrocontrol/sensor/temperatureC/sensor1";
 const char* mqtt_temperatureTopicRaw = "hydrocontrol/sensor/temperatureC/sensor1/raw";
 const char* mqtt_phTopic = "hydrocontrol/sensor/ph/sensor1";
 const char* mqtt_phTopicRaw = "hydrocontrol/sensor/ph/sensor1/raw";
+const char* mqtt_phTopicFiltered = "hydrocontrol/sensor/ph/sensor1/filtered";
 const char* mqtt_controlInputTopic = "hydrocontrol/actuator/pump/u_ml";
 const String clientId = "HydroControl";
 
@@ -191,7 +192,8 @@ void publishWaterTemperature() {
 }
 
 void publishPH() {
-  publish(mqtt_phTopicRaw,ph);
+  publish(mqtt_phTopicRaw,ph_raw);
+  publish(mqtt_phTopicFiltered,ph);
   if (phPlausible){
     publish(mqtt_phTopic,ph);
   }
@@ -228,6 +230,6 @@ void phCalibrateLow() {
 
 void phCalibrateHigh() {
   Serial.println("Calibrating ph value (HIGH)");
-  pHSensor.calibrationMid(PHCAL_HIGH_REF);
+  pHSensor.calibrationHigh(PHCAL_HIGH_REF);
   EEPROM.put(pHCalibrationValueAddress, pHSensor.getCalibrationValue());
 }
