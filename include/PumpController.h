@@ -23,9 +23,9 @@ private:
     double e; // Control error
     double u; // Control input (ml for next interval)
     double u_max = 3;
-    double u_min = 0.5;
+    double u_min = 0.2;
 
-    const double deg_per_ml = 180/50*360.0;
+    const double deg_per_ml = 180/50*360.0; // Calibration value
 public:
     PumpController(uint8_t pin_dir, uint8_t pin_step, uint8_t pin_sleep) : stepper(MOTOR_STEPS, pin_dir, pin_step, pin_sleep) {stepper.disable();}
     void updateController(double y);
