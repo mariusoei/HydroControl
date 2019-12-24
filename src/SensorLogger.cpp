@@ -132,6 +132,8 @@ void setupLogger() {
   // Start up the sensor library
   tempSensors.begin();
 
+  EEPROM.begin(sizeof(PHCalibrationValue));
+
   // Get pH sensor calibration from EEPROM
   struct PHCalibrationValue pHCalibrationValue;
   EEPROM.get(pHCalibrationValueAddress, pHCalibrationValue);
@@ -226,10 +228,12 @@ void phCalibrateLow() {
   Serial.println("Calibrating ph value (LOW)");
   pHSensor.calibrationLow(PHCAL_LOW_REF);
   EEPROM.put(pHCalibrationValueAddress, pHSensor.getCalibrationValue());
+  EEPROM.commit();
 }
 
 void phCalibrateHigh() {
   Serial.println("Calibrating ph value (HIGH)");
   pHSensor.calibrationHigh(PHCAL_HIGH_REF);
   EEPROM.put(pHCalibrationValueAddress, pHSensor.getCalibrationValue());
+  EEPROM.commit();
 }
