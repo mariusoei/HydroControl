@@ -1,6 +1,6 @@
 #include <TaskScheduler.h>
 
-#include "SensorLogger.h"
+#include "SensorActuatorLogger.h"
 #include <ESP8266WiFi.h>
 
 #include "PumpController.h"
@@ -32,7 +32,7 @@ void setup() {
   Serial.begin(115200);
   WiFiManager wifiManager;
   wifiManager.autoConnect("AutoConnectAP_HydroControl");
-  setupLogger();
+  setupMQTT();
   delay(100);
   Serial.println("Scheduler: setup complete");
   // start the WiFi OTA library with internal (flash) based storage

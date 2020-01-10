@@ -1,5 +1,5 @@
-#ifndef SENSORLOGGER_H
-#define SENSORLOGGER_H
+#ifndef SENSORACTUATORLOGGER_H
+#define SENSORACTUATORLOGGER_H
 
 // DS18B20 data wire is plugged into port D1 on the ESP
 #define ONE_WIRE_BUS_TEMPSENSOR D1
@@ -11,7 +11,7 @@
 
 
 
-void setupLogger();
+void setupMQTT();
 
 void publishWaterTemperature();
 float measureWaterTemperature();

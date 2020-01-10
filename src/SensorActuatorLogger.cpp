@@ -1,4 +1,4 @@
-#include "SensorLogger.h"
+#include "SensorActuatorLogger.h"
 
 // Includes for the DS18B20 sensor
 #include <OneWire.h>
@@ -124,7 +124,7 @@ bool checkPHMeasurementPlausibility(double ph){
   return plausible;
 }
 
-void setupLogger() {
+void setupMQTT() {
   // Set calibration button pins as inputs
   pinMode(PHCAL_LOW_PIN,INPUT);
   pinMode(PHCAL_HIGH_PIN,INPUT);
