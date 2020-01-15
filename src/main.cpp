@@ -44,6 +44,12 @@ void loop() {
   ts.execute();
 }
 
+void loopMQTT_callback(){
+  Serial.print(millis());
+  Serial.println(": running the MQTT update");
+  loopMQTT();
+}
+
 void measureAndPublishWaterTemperature_callback() {
   Serial.print(millis());
   Serial.println(": measuring, publishing water temperature");
@@ -106,3 +112,4 @@ Task task_measurePH (100 * TASK_MILLISECOND, TASK_FOREVER, &measurePH_callback, 
 Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
 Task task_phCalibrateButtonCheck(200*TASK_MILLISECOND, TASK_FOREVER, &phCalibrateButtonCheck_callback, &ts, true);
 Task task_otaHandle(10*TASK_MILLISECOND, TASK_FOREVER, &otaHandle_callback, &ts, true);
+Task task_loopMQTT(1*TASK_SECOND, TASK_FOREVER, &loopMQTT_callback, &ts, true);

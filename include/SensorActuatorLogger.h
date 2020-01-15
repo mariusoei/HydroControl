@@ -9,9 +9,15 @@
 #define PHCAL_LOW_PIN D6
 #define PHCAL_HIGH_PIN D5
 
+// GPIO for LED control
+#define LED1_PIN D7
+// GPIO for fan
+#define FAN1_PIN D8
+
 
 
 void setupMQTT();
+void loopMQTT();
 
 void publishWaterTemperature();
 float measureWaterTemperature();
@@ -22,7 +28,7 @@ void publishControlInput(double u);
 bool checkPHMeasurementPlausibility(double ph);
 bool checkTempMeasurementPlausibility(double temperature_C);
 
-void publish(const char* topic, double value);
+void publishDouble(const char* topic, double value);
 
 void phCalibrateLow();
 void phCalibrateHigh();

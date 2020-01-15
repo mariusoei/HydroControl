@@ -24,6 +24,7 @@ const int mqtt_port = 1883;
 
 const char* mqtt_user = "sensors";
 const char* mqtt_password = "mariusmqttsensors12";
+const String clientId = "HydroControl";
 
 const char* mqtt_temperatureTopic = "hydrocontrol/sensor/temperatureC/sensor1";
 const char* mqtt_temperatureTopicRaw = "hydrocontrol/sensor/temperatureC/sensor1/raw";
@@ -31,7 +32,14 @@ const char* mqtt_phTopic = "hydrocontrol/sensor/ph/sensor1";
 const char* mqtt_phTopicRaw = "hydrocontrol/sensor/ph/sensor1/raw";
 const char* mqtt_phTopicFiltered = "hydrocontrol/sensor/ph/sensor1/filtered";
 const char* mqtt_controlInputTopic = "hydrocontrol/actuator/pump/u_ml";
-const String clientId = "HydroControl";
+
+const char* mqtt_ha_discovery_light_topic = "homeassistant/switch/hydrocontrol/led1/config";
+const char* mqtt_ha_discovery_light_payload = R"({"name": "hydrocontrol_led1", "command_topic": "hydrocontrol/actuator/led1/set", "state_topic": "hydrocontrol/actuator/led1/state"})";
+const char* mqtt_lightSwitchCommandTopic = "hydrocontrol/actuator/led1/set";
+const char* mqtt_lightSwitchStateTopic = "hydrocontrol/actuator/led1/state";
+const char* mqtt_lightSwitchAvailableTopic = "hydrocontrol/actuator/led1/available";
+const char* mqtt_lightSwitchPayloadOn = "ON";
+const char* mqtt_lightSwitchPayloadOff = "OFF";
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -80,6 +88,12 @@ bool MQTT_reconnectOnce() {
   // Attempt to connect
   if (mqttClient.connect(clientId.c_str(),mqtt_user,mqtt_password)) {
     Serial.println("connected");
+    mqttClient.loop();
+    // Subscribe to command message topics
+    mqttClient.subscribe(mqtt_lightSwitchCommandTopic);
+    // publish discovery messages
+    Serial.println("Publishing HA discovery messages.");
+    mqttClient.publish(mqtt_ha_discovery_light_topic, mqtt_ha_discovery_light_payload);
     return true;
   } else {
     Serial.print("failed, rc=");
@@ -124,6 +138,21 @@ bool checkPHMeasurementPlausibility(double ph){
   return plausible;
 }
 
+void mqttMessageReceived(char* topic, byte* payload, unsigned int length){
+  // Callback for receiving MQTT messages
+
+  if(!strcmp(topic,mqtt_lightSwitchCommandTopic)){
+    // Handling LED1 switch commands
+    if(!strncmp((char*)payload,mqtt_lightSwitchPayloadOn,length)){
+      Serial.println("Activating LED lights.");
+      digitalWrite(LED1_PIN,HIGH);
+    }else if(!strncmp((char*)payload,mqtt_lightSwitchPayloadOff,length)){
+      Serial.println("Deactivating LED lights.");
+      digitalWrite(LED1_PIN,LOW);
+    }
+  }  
+}
+
 void setupMQTT() {
   // Set calibration button pins as inputs
   pinMode(PHCAL_LOW_PIN,INPUT);
@@ -141,7 +170,20 @@ void setupMQTT() {
 
   // Setup mqtt
   mqttClient.setServer(mqtt_server, mqtt_port);
+  mqttClient.setCallback(mqttMessageReceived);
 
+  // Connect to the MQTT broker
+  if (!mqttClient.connected()) { MQTT_reconnectOnce(); }
+
+  // Set the output pin modes
+  pinMode(LED1_PIN,OUTPUT);
+  pinMode(FAN1_PIN,OUTPUT);
+}
+
+void loopMQTT(){
+  if(!mqttClient.loop()){
+    MQTT_reconnectOnce();
+  }
 }
 
 float measureWaterTemperature(){
@@ -165,47 +207,47 @@ float measureWaterTemperature(){
 }
 
 float measurePH(){
-  Serial.print("Measuring ph value: ");
+  //Serial.print("Measuring ph value: ");
   // Read the sensor value
   ph_raw = pHSensor.singleReading().getpH();
   RA_ph.addValue(ph_raw);
-  Serial.print(ph_raw);
+  //Serial.print(ph_raw);
 
   ph = RA_ph.getAverage();
-  Serial.print(" (Average: "); Serial.print(ph); Serial.print(")");
+  //Serial.print(" (Average: "); Serial.print(ph); Serial.print(")");
   // Write ph value to character array
   sprintf(ph_cstr,"%.2f",ph);
   // Check plausibility
   phPlausible = checkPHMeasurementPlausibility(ph);
-  if(phPlausible){
+/*  if(phPlausible){
     Serial.println(" (plausible)");
   }else{
     Serial.println(" (not plausible!)");
-  }
+  } */
   return ph;
 }
 
 
 void publishWaterTemperature() {
-  publish(mqtt_temperatureTopicRaw,temperatureC);
+  publishDouble(mqtt_temperatureTopicRaw,temperatureC);
   if (temperaturePlausible){
-    publish(mqtt_temperatureTopic,temperatureC);
+    publishDouble(mqtt_temperatureTopic,temperatureC);
   }
 }
 
 void publishPH() {
-  publish(mqtt_phTopicRaw,ph_raw);
-  publish(mqtt_phTopicFiltered,ph);
+  publishDouble(mqtt_phTopicRaw,ph_raw);
+  publishDouble(mqtt_phTopicFiltered,ph);
   if (phPlausible){
-    publish(mqtt_phTopic,ph);
+    publishDouble(mqtt_phTopic,ph);
   }
 }
 
 void publishControlInput(double u){
-  publish(mqtt_controlInputTopic,u);
+  publishDouble(mqtt_controlInputTopic,u);
 }
 
-void publish(const char* topic, double value) {
+void publishDouble(const char* topic, double value) {
   if (!mqttClient.connected()) {
         // Only try once so other tasks aren't blocked
         MQTT_reconnectOnce();
@@ -219,7 +261,7 @@ void publish(const char* topic, double value) {
     Serial.print(topic);
     Serial.print("', value: ");
     Serial.println(value);
-    // publish sensor value as MQTT message
+    // publishDouble sensor value as MQTT message
     mqttClient.publish(topic, cstr);
   }
 }
