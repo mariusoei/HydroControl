@@ -37,9 +37,14 @@ const char* mqtt_ha_discovery_light_topic = "homeassistant/switch/hydrocontrol/l
 const char* mqtt_ha_discovery_light_payload = R"({"name": "hydrocontrol_led1", "command_topic": "hydrocontrol/actuator/led1/set", "state_topic": "hydrocontrol/actuator/led1/state"})";
 const char* mqtt_lightSwitchCommandTopic = "hydrocontrol/actuator/led1/set";
 const char* mqtt_lightSwitchStateTopic = "hydrocontrol/actuator/led1/state";
-const char* mqtt_lightSwitchAvailableTopic = "hydrocontrol/actuator/led1/available";
-const char* mqtt_lightSwitchPayloadOn = "ON";
-const char* mqtt_lightSwitchPayloadOff = "OFF";
+
+const char* mqtt_ha_discovery_fan_topic = "homeassistant/switch/hydrocontrol/fan1/config";
+const char* mqtt_ha_discovery_fan_payload = R"({"name": "hydrocontrol_fan1", "command_topic": "hydrocontrol/actuator/fan1/set", "state_topic": "hydrocontrol/actuator/fan1/state"})";
+const char* mqtt_fanSwitchCommandTopic = "hydrocontrol/actuator/fan1/set";
+const char* mqtt_fanSwitchStateTopic = "hydrocontrol/actuator/fan1/state";
+
+const char* mqtt_switchPayloadOn = "ON";
+const char* mqtt_switchPayloadOff = "OFF";
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -91,9 +96,11 @@ bool MQTT_reconnectOnce() {
     mqttClient.loop();
     // Subscribe to command message topics
     mqttClient.subscribe(mqtt_lightSwitchCommandTopic);
+    mqttClient.subscribe(mqtt_fanSwitchCommandTopic);
     // publish discovery messages
     Serial.println("Publishing HA discovery messages.");
     mqttClient.publish(mqtt_ha_discovery_light_topic, mqtt_ha_discovery_light_payload);
+    mqttClient.publish(mqtt_ha_discovery_fan_topic, mqtt_ha_discovery_fan_payload);
     return true;
   } else {
     Serial.print("failed, rc=");
@@ -143,12 +150,26 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length){
 
   if(!strcmp(topic,mqtt_lightSwitchCommandTopic)){
     // Handling LED1 switch commands
-    if(!strncmp((char*)payload,mqtt_lightSwitchPayloadOn,length)){
+    if(!strncmp((char*)payload,mqtt_switchPayloadOn,length)){
       Serial.println("Activating LED lights.");
       digitalWrite(LED1_PIN,HIGH);
-    }else if(!strncmp((char*)payload,mqtt_lightSwitchPayloadOff,length)){
+      mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOn);
+    }else if(!strncmp((char*)payload,mqtt_switchPayloadOff,length)){
       Serial.println("Deactivating LED lights.");
       digitalWrite(LED1_PIN,LOW);
+      mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOff);
+    }
+  } 
+  if(!strcmp(topic,mqtt_fanSwitchCommandTopic)){
+    // Handling FAN1 switch commands
+    if(!strncmp((char*)payload,mqtt_switchPayloadOn,length)){
+      Serial.println("Activating fan1.");
+      analogWrite(FAN1_PIN,1024);
+      mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOn);
+    }else if(!strncmp((char*)payload,mqtt_switchPayloadOff,length)){
+      Serial.println("Deactivating fan1.");
+      digitalWrite(FAN1_PIN,LOW);
+      mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOff);
     }
   }  
 }
@@ -178,6 +199,10 @@ void setupMQTT() {
   // Set the output pin modes
   pinMode(LED1_PIN,OUTPUT);
   pinMode(FAN1_PIN,OUTPUT);
+
+  // Initial switch states
+  mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOff);
+  mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOff);
 }
 
 void loopMQTT(){
