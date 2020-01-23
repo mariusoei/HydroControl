@@ -1,5 +1,7 @@
 #include "SensorActuatorLogger.h"
 
+#include <stdlib.h>
+
 // Includes for the DS18B20 sensor
 #include <OneWire.h>
 #include <DallasTemperature.h>
@@ -41,15 +43,18 @@ const char* mqtt_lightSwitchStateTopic = "hydrocontrol/actuator/led1/state";
 const char* mqtt_ha_discovery_fan_topic = "homeassistant/switch/hydrocontrol/fan1/config";
 const char* mqtt_ha_discovery_fan_payload = R"({"name": "hydrocontrol_fan1", "command_topic": "hydrocontrol/actuator/fan1/set", "state_topic": "hydrocontrol/actuator/fan1/state"})";
 const char* mqtt_fanSwitchCommandTopic = "hydrocontrol/actuator/fan1/set";
+const char* mqtt_fanSwitchSetLevelTopic = "hydrocontrol/actuator/fan1/level";
 const char* mqtt_fanSwitchStateTopic = "hydrocontrol/actuator/fan1/state";
 
 const char* mqtt_switchPayloadOn = "ON";
 const char* mqtt_switchPayloadOff = "OFF";
 
+// level of fan1 (0 - 1024)
+int fan1_level = 200;
+
+
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
-long lastMsg = 0;
-char msg[50];
 
 // Variable for the sensor value (in deg C)
 float temperatureC;
@@ -97,10 +102,11 @@ bool MQTT_reconnectOnce() {
     // Subscribe to command message topics
     mqttClient.subscribe(mqtt_lightSwitchCommandTopic);
     mqttClient.subscribe(mqtt_fanSwitchCommandTopic);
+    mqttClient.subscribe(mqtt_fanSwitchSetLevelTopic);
     // publish discovery messages
     Serial.println("Publishing HA discovery messages.");
-    mqttClient.publish(mqtt_ha_discovery_light_topic, mqtt_ha_discovery_light_payload);
-    mqttClient.publish(mqtt_ha_discovery_fan_topic, mqtt_ha_discovery_fan_payload);
+    mqttClient.publish(mqtt_ha_discovery_light_topic, mqtt_ha_discovery_light_payload, true);
+    mqttClient.publish(mqtt_ha_discovery_fan_topic, mqtt_ha_discovery_fan_payload, true);
     return true;
   } else {
     Serial.print("failed, rc=");
@@ -164,7 +170,7 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length){
     // Handling FAN1 switch commands
     if(!strncmp((char*)payload,mqtt_switchPayloadOn,length)){
       Serial.println("Activating fan1.");
-      analogWrite(FAN1_PIN,1024);
+      analogWrite(FAN1_PIN,fan1_level);
       mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOn);
     }else if(!strncmp((char*)payload,mqtt_switchPayloadOff,length)){
       Serial.println("Deactivating fan1.");
@@ -172,6 +178,14 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length){
       mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOff);
     }
   }  
+  if(!strcmp(topic,mqtt_fanSwitchSetLevelTopic)){
+    // Handling FAN1 level commands
+    fan1_level = strtol((char*)payload,NULL,10);
+    fan1_level = max(fan1_level,0);
+    fan1_level = min(fan1_level,1024);
+    Serial.print("Set fan1 level: ");
+    Serial.println((char*)payload);
+  }
 }
 
 void setupMQTT() {
