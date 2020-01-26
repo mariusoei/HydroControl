@@ -14,6 +14,7 @@
 // GPIO for fan
 #define FAN1_PIN D8
 
+#define RUNNINGAVERAGE_N_POINTS_PH 1200
 
 
 void setupMQTT();

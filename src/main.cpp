@@ -107,7 +107,7 @@ void otaHandle_callback(){
 // Define all tasks
 // Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
 Task task_measureAndPublishWaterTemperature (5 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
-Task task_publishPH (5 * TASK_SECOND, TASK_FOREVER, &publishPH_callback, &ts, true);
+Task task_publishPH (30 * TASK_SECOND, TASK_FOREVER, &publishPH_callback, &ts, true);
 Task task_measurePH (100 * TASK_MILLISECOND, TASK_FOREVER, &measurePH_callback, &ts, true);
 Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
 Task task_phCalibrateButtonCheck(200*TASK_MILLISECOND, TASK_FOREVER, &phCalibrateButtonCheck_callback, &ts, true);

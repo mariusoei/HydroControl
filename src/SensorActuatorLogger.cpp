@@ -36,12 +36,12 @@ const char* mqtt_phTopicFiltered = "hydrocontrol/sensor/ph/sensor1/filtered";
 const char* mqtt_controlInputTopic = "hydrocontrol/actuator/pump/u_ml";
 
 const char* mqtt_ha_discovery_light_topic = "homeassistant/switch/hydrocontrol/led1/config";
-const char* mqtt_ha_discovery_light_payload = R"({"name": "hydrocontrol_led1", "command_topic": "hydrocontrol/actuator/led1/set", "state_topic": "hydrocontrol/actuator/led1/state"})";
+const char* mqtt_ha_discovery_light_payload = R"({"name": "hydrocontrol_led1", "command_topic": "hydrocontrol/actuator/led1/set", "state_topic": "hydrocontrol/actuator/led1/state", "retain":"true"})";
 const char* mqtt_lightSwitchCommandTopic = "hydrocontrol/actuator/led1/set";
 const char* mqtt_lightSwitchStateTopic = "hydrocontrol/actuator/led1/state";
 
 const char* mqtt_ha_discovery_fan_topic = "homeassistant/switch/hydrocontrol/fan1/config";
-const char* mqtt_ha_discovery_fan_payload = R"({"name": "hydrocontrol_fan1", "command_topic": "hydrocontrol/actuator/fan1/set", "state_topic": "hydrocontrol/actuator/fan1/state"})";
+const char* mqtt_ha_discovery_fan_payload = R"({"name": "hydrocontrol_fan1", "command_topic": "hydrocontrol/actuator/fan1/set", "state_topic": "hydrocontrol/actuator/fan1/state", "retain":"true"})";
 const char* mqtt_fanSwitchCommandTopic = "hydrocontrol/actuator/fan1/set";
 const char* mqtt_fanSwitchSetLevelTopic = "hydrocontrol/actuator/fan1/level";
 const char* mqtt_fanSwitchStateTopic = "hydrocontrol/actuator/fan1/state";
@@ -49,7 +49,7 @@ const char* mqtt_fanSwitchStateTopic = "hydrocontrol/actuator/fan1/state";
 const char* mqtt_switchPayloadOn = "ON";
 const char* mqtt_switchPayloadOff = "OFF";
 
-// level of fan1 (0 - 1024)
+// Initial level of fan1 (0 - 1024)
 int fan1_level = 200;
 
 
@@ -83,7 +83,7 @@ const unsigned int pHCalibrationValueAddress = 0;
 
 // Variable for the ph sensor value
 float ph, ph_raw;
-RunningAverage RA_ph(50);
+RunningAverage RA_ph(RUNNINGAVERAGE_N_POINTS_PH);
 // And for the value printed to a character array
 char ph_cstr [10];
 // Boolean for plausibility (only published if plausible)
