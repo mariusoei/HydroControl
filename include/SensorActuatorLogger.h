@@ -16,6 +16,7 @@
 
 #define RUNNINGAVERAGE_N_POINTS_PH 1200
 
+bool phControlActive = true;
 
 void setupMQTT();
 void loopMQTT();

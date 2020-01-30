@@ -28,7 +28,6 @@ Scheduler ts;
 
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(115200);
   WiFiManager wifiManager;
   wifiManager.autoConnect("AutoConnectAP_HydroControl");
@@ -71,11 +70,11 @@ void phControlUpdate_callback(){
   Serial.print(millis());
   Serial.println(": running pH controller update");
   float ph = measurePH();
-  if(checkPHMeasurementPlausibility(ph)){
+  if(checkPHMeasurementPlausibility(ph)&&phControlActive){
     phControl.updateController(ph);
     publishControlInput(phControl.getLastControlInput());
   }else{
-    Serial.println("PH measurement implausible, not updating controller.");
+    Serial.println("PH measurement implausible or controller deactivated - not updating controller.");
   }
 }
 

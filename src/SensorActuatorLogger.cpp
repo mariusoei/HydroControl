@@ -46,6 +46,11 @@ const char* mqtt_fanSwitchCommandTopic = "hydrocontrol/actuator/fan1/set";
 const char* mqtt_fanSwitchSetLevelTopic = "hydrocontrol/actuator/fan1/level";
 const char* mqtt_fanSwitchStateTopic = "hydrocontrol/actuator/fan1/state";
 
+const char* mqtt_ha_discovery_phcontrol_topic = "homeassistant/switch/hydrocontrol/phcontrol/config";
+const char* mqtt_ha_discovery_phcontrol_payload = R"({"name": "hydrocontrol_phcontrol", "command_topic": "hydrocontrol/actuator/phcontrol/set", "state_topic": "hydrocontrol/actuator/phcontrol/state", "retain":"true"})";
+const char* mqtt_phControllerCommandTopic = "hydrocontrol/actuator/phcontrol/set";
+const char* mqtt_phControllerStateTopic = "hydrocontrol/actuator/phcontrol/state";
+
 const char* mqtt_switchPayloadOn = "ON";
 const char* mqtt_switchPayloadOff = "OFF";
 
@@ -91,6 +96,8 @@ bool phPlausible;
 // Min and max plausible values
 const float PH_MAX = 9.0f;
 const float PH_MIN = 4.5f;
+// Maximum allowed standard deviation within the buffer
+const float PH_MAX_STDDEV = 0.1f;
 
 bool MQTT_reconnectOnce() {
   // Loop until we're reconnected
@@ -103,10 +110,12 @@ bool MQTT_reconnectOnce() {
     mqttClient.subscribe(mqtt_lightSwitchCommandTopic);
     mqttClient.subscribe(mqtt_fanSwitchCommandTopic);
     mqttClient.subscribe(mqtt_fanSwitchSetLevelTopic);
+    mqttClient.subscribe(mqtt_phControllerCommandTopic);
     // publish discovery messages
     Serial.println("Publishing HA discovery messages.");
     mqttClient.publish(mqtt_ha_discovery_light_topic, mqtt_ha_discovery_light_payload, true);
     mqttClient.publish(mqtt_ha_discovery_fan_topic, mqtt_ha_discovery_fan_payload, true);
+    mqttClient.publish(mqtt_ha_discovery_phcontrol_topic, mqtt_ha_discovery_phcontrol_payload, true);
     return true;
   } else {
     Serial.print("failed, rc=");
@@ -147,6 +156,7 @@ bool checkPHMeasurementPlausibility(double ph){
 
   if(ph>PH_MAX) plausible = false;
   if(ph<PH_MIN) plausible = false;
+  if(RA_ph.getStandardDeviation() > PH_MAX_STDDEV) plausible = false;
 
   return plausible;
 }
@@ -159,11 +169,11 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length){
     if(!strncmp((char*)payload,mqtt_switchPayloadOn,length)){
       Serial.println("Activating LED lights.");
       digitalWrite(LED1_PIN,HIGH);
-      mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOn);
+      mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOn,true);
     }else if(!strncmp((char*)payload,mqtt_switchPayloadOff,length)){
       Serial.println("Deactivating LED lights.");
       digitalWrite(LED1_PIN,LOW);
-      mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOff);
+      mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOff,true);
     }
   } 
   if(!strcmp(topic,mqtt_fanSwitchCommandTopic)){
@@ -186,6 +196,18 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length){
     Serial.print("Set fan1 level: ");
     Serial.println((char*)payload);
   }
+  if(!strcmp(topic,mqtt_phControllerCommandTopic)){
+    // Handling FAN1 switch commands
+    if(!strncmp((char*)payload,mqtt_switchPayloadOn,length)){
+      Serial.println("Activating ph control.");
+      phControlActive = true;
+      mqttClient.publish(mqtt_phControllerStateTopic,mqtt_switchPayloadOn);
+    }else if(!strncmp((char*)payload,mqtt_switchPayloadOff,length)){
+      Serial.println("Deactivating ph control.");
+      phControlActive = false;
+      mqttClient.publish(mqtt_phControllerStateTopic,mqtt_switchPayloadOff);
+    }
+  } 
 }
 
 void setupMQTT() {
