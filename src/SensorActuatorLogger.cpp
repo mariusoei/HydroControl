@@ -57,6 +57,9 @@ const char* mqtt_switchPayloadOff = "OFF";
 // Initial level of fan1 (0 - 1024)
 int fan1_level = 200;
 
+// PH Control enabled?
+bool phControlActive = true;
+
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -235,10 +238,7 @@ void setupMQTT() {
   // Set the output pin modes
   pinMode(LED1_PIN,OUTPUT);
   pinMode(FAN1_PIN,OUTPUT);
-
-  // Initial switch states
-  mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOff);
-  mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOff);
+  phControlActive = true;
 }
 
 void loopMQTT(){
