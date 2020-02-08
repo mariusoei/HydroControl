@@ -4,12 +4,16 @@ void PumpController::updateController(double y){
     stepper.begin(RPM, MICROSTEPS);
     this->y = y;
 
+    // calculate the error - negative if ph is too high
     e = ref - y;
     // we can only lower the pH, so we limit the error at 0
     if(e>0) e=0;
 
-    // Simple proportional control law
+    // Simple proportional control law (K is a negative constant for ph down)
     u = K * e;
+
+    // //DEBUG
+    // u = 1;
 
     // Upper and lower bounds for control input
     if(u>u_max) u=u_max; // not more than maximum

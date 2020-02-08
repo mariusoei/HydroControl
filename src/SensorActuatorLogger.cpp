@@ -92,8 +92,6 @@ const unsigned int pHCalibrationValueAddress = 0;
 // Variable for the ph sensor value
 float ph, ph_raw;
 RunningAverage RA_ph(RUNNINGAVERAGE_N_POINTS_PH);
-// And for the value printed to a character array
-char ph_cstr [10];
 // Boolean for plausibility (only published if plausible)
 bool phPlausible;
 // Min and max plausible values
@@ -276,8 +274,6 @@ float measurePH(){
 
   ph = RA_ph.getAverage();
   //Serial.print(" (Average: "); Serial.print(ph); Serial.print(")");
-  // Write ph value to character array
-  sprintf(ph_cstr,"%.2f",ph);
   // Check plausibility
   phPlausible = checkPHMeasurementPlausibility(ph);
 /*  if(phPlausible){

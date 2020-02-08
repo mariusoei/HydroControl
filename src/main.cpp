@@ -75,6 +75,7 @@ void phControlUpdate_callback(){
     publishControlInput(phControl.getLastControlInput());
   }else{
     Serial.println("PH measurement implausible or controller deactivated - not updating controller.");
+    publishControlInput(0); //publishing the zero control input
   }
 }
 
@@ -105,7 +106,7 @@ void otaHandle_callback(){
 */
 // Define all tasks
 // Constructor: Task(Interval, Iterations/Repetitions, Callback, Scheduler, Enable)
-Task task_measureAndPublishWaterTemperature (5 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
+Task task_measureAndPublishWaterTemperature (30 * TASK_SECOND, TASK_FOREVER, &measureAndPublishWaterTemperature_callback, &ts, true);
 Task task_publishPH (30 * TASK_SECOND, TASK_FOREVER, &publishPH_callback, &ts, true);
 Task task_measurePH (100 * TASK_MILLISECOND, TASK_FOREVER, &measurePH_callback, &ts, true);
 Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback, &ts, true);
