@@ -66,11 +66,15 @@ void measurePH_callback(){
   measurePH();
 }
 
+void publishStates_callback(){
+  publishStates();
+}
+
 void phControlUpdate_callback(){
   Serial.print(millis());
   Serial.println(": running pH controller update");
   float ph = measurePH();
-  if(checkPHMeasurementPlausibility(ph)&&phControlActive){
+  if(checkPHMeasurementPlausibility(ph)&&phControl_enabled){
     phControl.updateController(ph);
     publishControlInput(phControl.getLastControlInput());
   }else{
@@ -113,3 +117,4 @@ Task task_phControlUpdate(T_CONTROLLER, TASK_FOREVER, &phControlUpdate_callback,
 Task task_phCalibrateButtonCheck(200*TASK_MILLISECOND, TASK_FOREVER, &phCalibrateButtonCheck_callback, &ts, true);
 Task task_otaHandle(10*TASK_MILLISECOND, TASK_FOREVER, &otaHandle_callback, &ts, true);
 Task task_loopMQTT(1*TASK_SECOND, TASK_FOREVER, &loopMQTT_callback, &ts, true);
+Task task_publishStates(5*TASK_MINUTE, TASK_FOREVER, &publishStates_callback, &ts, true);

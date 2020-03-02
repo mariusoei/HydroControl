@@ -16,10 +16,13 @@
 
 #define RUNNINGAVERAGE_N_POINTS_PH 1200
 
-extern bool phControlActive;
+extern bool phControl_enabled;
+extern bool fan1_enabled;
+extern bool led1_enabled;
 
 void setupMQTT();
 void loopMQTT();
+void publishStates();
 
 void publishWaterTemperature();
 float measureWaterTemperature();

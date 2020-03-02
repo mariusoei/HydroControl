@@ -56,9 +56,13 @@ const char* mqtt_switchPayloadOff = "OFF";
 
 // Initial level of fan1 (0 - 1024)
 int fan1_level = 200;
+bool fan1_enabled = true;
 
 // PH Control enabled?
-bool phControlActive = true;
+bool phControl_enabled = true;
+
+// LED1 enabled?
+bool led1_enabled = false;
 
 
 WiFiClient espClient;
@@ -98,7 +102,18 @@ bool phPlausible;
 const float PH_MAX = 9.0f;
 const float PH_MIN = 4.5f;
 // Maximum allowed standard deviation within the buffer
-const float PH_MAX_STDDEV = 0.1f;
+const float PH_MAX_STDDEV = 0.15f;
+
+
+const char* mqttSwitchPayload(bool on){
+  // Get the corresponding switch payload string
+  if(on){
+    return mqtt_switchPayloadOn;
+  }else{
+    return mqtt_switchPayloadOff;
+  }
+}
+
 
 bool MQTT_reconnectOnce() {
   // Loop until we're reconnected
@@ -170,10 +185,12 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length){
     if(!strncmp((char*)payload,mqtt_switchPayloadOn,length)){
       Serial.println("Activating LED lights.");
       digitalWrite(LED1_PIN,HIGH);
+      led1_enabled = true;
       mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOn,true);
     }else if(!strncmp((char*)payload,mqtt_switchPayloadOff,length)){
       Serial.println("Deactivating LED lights.");
       digitalWrite(LED1_PIN,LOW);
+      led1_enabled = false;
       mqttClient.publish(mqtt_lightSwitchStateTopic,mqtt_switchPayloadOff,true);
     }
   } 
@@ -182,11 +199,13 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length){
     if(!strncmp((char*)payload,mqtt_switchPayloadOn,length)){
       Serial.println("Activating fan1.");
       analogWrite(FAN1_PIN,fan1_level);
-      mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOn);
+      fan1_enabled = true;
+      mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOn,true);
     }else if(!strncmp((char*)payload,mqtt_switchPayloadOff,length)){
       Serial.println("Deactivating fan1.");
       digitalWrite(FAN1_PIN,LOW);
-      mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOff);
+      fan1_enabled = false;
+      mqttClient.publish(mqtt_fanSwitchStateTopic,mqtt_switchPayloadOff,true);
     }
   }  
   if(!strcmp(topic,mqtt_fanSwitchSetLevelTopic)){
@@ -201,15 +220,24 @@ void mqttMessageReceived(char* topic, byte* payload, unsigned int length){
     // Handling FAN1 switch commands
     if(!strncmp((char*)payload,mqtt_switchPayloadOn,length)){
       Serial.println("Activating ph control.");
-      phControlActive = true;
-      mqttClient.publish(mqtt_phControllerStateTopic,mqtt_switchPayloadOn);
+      phControl_enabled = true;
+      mqttClient.publish(mqtt_phControllerStateTopic,mqtt_switchPayloadOn,true);
     }else if(!strncmp((char*)payload,mqtt_switchPayloadOff,length)){
       Serial.println("Deactivating ph control.");
-      phControlActive = false;
-      mqttClient.publish(mqtt_phControllerStateTopic,mqtt_switchPayloadOff);
+      phControl_enabled = false;
+      mqttClient.publish(mqtt_phControllerStateTopic,mqtt_switchPayloadOff,true);
     }
   } 
 }
+
+
+void publishStates(){
+  // Publish the states of lights, fans and controllers to MQTT
+  mqttClient.publish(mqtt_phControllerStateTopic,mqttSwitchPayload(phControl_enabled),true);
+  mqttClient.publish(mqtt_lightSwitchStateTopic,mqttSwitchPayload(led1_enabled),true);
+  mqttClient.publish(mqtt_fanSwitchCommandTopic,mqttSwitchPayload(fan1_enabled),true);
+}
+
 
 void setupMQTT() {
   // Set calibration button pins as inputs
@@ -236,7 +264,7 @@ void setupMQTT() {
   // Set the output pin modes
   pinMode(LED1_PIN,OUTPUT);
   pinMode(FAN1_PIN,OUTPUT);
-  phControlActive = true;
+  phControl_enabled = true;
 }
 
 void loopMQTT(){
