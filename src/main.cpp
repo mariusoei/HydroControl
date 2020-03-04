@@ -35,7 +35,7 @@ void setup() {
   delay(100);
   Serial.println("Scheduler: setup complete");
   // start the WiFi OTA library with internal (flash) based storage
-  ArduinoOTA.setPassword("***REMOVED***");
+  ArduinoOTA.setPassword("$9YDb9KBuLpv");
   ArduinoOTA.begin();
 }
 
