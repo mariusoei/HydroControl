@@ -2,6 +2,7 @@
 HydroControl is an ESP8266/ESP32-based controller for hydroponic plant cultivation.
 
 It is currently in a very initial stage and things might go horribly wrong.
+The code is licensed under the Creative Commons Zero v1.0 Universal license.
 
 ## Features
 Not many, at this stage:
